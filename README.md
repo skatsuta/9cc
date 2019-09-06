@@ -1,2 +1,3 @@
 # 9cc
-Small C compiler implemented in https://www.sigbus.info/compilerbook (Japanese).
+
+Small C compiler designed in https://www.sigbus.info/compilerbook (Japanese).
