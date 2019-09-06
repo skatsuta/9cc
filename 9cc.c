@@ -34,6 +34,21 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
+// User input program
+char *user_input;
+
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s^ ", pos, ""); // Print leading whitespaces
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
 // Advances to a next token and returns true if the next token is an expected symbol,
 // otherwise false.
 bool consume(char op) {
@@ -49,7 +64,7 @@ bool consume(char op) {
 void expect(char op) {
   char c = token->str[0];
   if (token->kind != TK_RESERVED || c != op) {
-    error("Expected '%c', but got '%c'.", op, c);
+    error_at(token->str, "Expected '%c', but got '%c'.", op, c);
   }
   token = token->next;
 }
@@ -57,7 +72,7 @@ void expect(char op) {
 // Advances to a next token if the next token is an integer, otherwise reports an error.
 int expect_number() {
   if (token->kind != TK_NUM) {
-    error("Expected an integer, but got a non-integer.");
+    error_at(token->str, "Expected an integer, but got a non-integer.");
   }
   int val = token->val;
   token = token->next;
@@ -100,7 +115,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    error("Could not tokenize the string.");
+    error_at(p, "Could not tokenize the string.");
   }
 
   new_token(TK_EOF, cur, p);
@@ -113,8 +128,11 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  // Store user input for error reporting
+  user_input = argv[1];
+
   // Tokenize
-  token = tokenize(argv[1]);
+  token = tokenize(user_input);
 
   // Output the header of assembly code
   printf(".intel_syntax noprefix\n");
