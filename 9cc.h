@@ -23,11 +23,12 @@ struct Token {
   Token *next; // Next token
   int val; // Value of a token if its kind is TK_NUM
   char *str; // String of a token
+  int len; // Length of a token
 };
 
 void error(char *fmt, ...);
-bool consume(char op);
-void expect(char op);
+bool consume(char *op);
+void expect(char *op);
 int expect_number();
 Token *tokenize(char *p);
 
@@ -44,6 +45,10 @@ typedef enum {
   ND_SUB, // -
   ND_MUL, // *
   ND_DIV, // /
+  ND_EQ, // ==
+  ND_NE, // !=
+  ND_LT, // <
+  ND_LE, // <=
   ND_NUM, // Integers
 } NodeKind;
 

@@ -21,18 +21,60 @@ Node *new_num(int val) {
 
 // Function declarations
 Node *expr();
+Node *equality();
+Node *relational();
+Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
 
-// expr = mul ("+" mul | "-" mul)*
+// expr = equality
 Node *expr() {
+  return equality();
+}
+
+// equality = relational ("==" relational | "!=" relational)*
+Node *equality() {
+  Node *node = relational();
+
+  for (;;) {
+    if (consume("==")) {
+      node = new_binary(ND_EQ, node, relational());
+    } else if (consume("!=")) {
+      node = new_binary(ND_NE, node, relational());
+    } else {
+      return node;
+    }
+  }
+}
+
+// relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+Node *relational() {
+  Node *node = add();
+
+  for (;;) {
+    if (consume("<")) {
+      node = new_binary(ND_LT, node, add());
+    } else if (consume("<=")) {
+      node = new_binary(ND_LE, node, add());
+    } else if (consume(">")) {
+      node = new_binary(ND_LT, add(), node);
+    } else if (consume(">=")) {
+      node = new_binary(ND_LE, add(), node);
+    } else {
+      return node;
+    }
+  }
+}
+
+// add = mul ("+" mul | "-" mul)*
+Node *add() {
   Node *node = mul();
 
   for (;;) {
-    if (consume('+')) {
+    if (consume("+")) {
       node = new_binary(ND_ADD, node, mul());
-    } else if (consume('-')) {
+    } else if (consume("-")) {
       node = new_binary(ND_SUB, node, mul());
     } else {
       return node;
@@ -45,9 +87,9 @@ Node *mul() {
   Node *node = unary();
 
   for (;;) {
-    if (consume('*')) {
+    if (consume("*")) {
       node = new_binary(ND_MUL, node, unary());
-    } else if (consume('/')) {
+    } else if (consume("/")) {
       node = new_binary(ND_DIV, node, unary());
     } else {
       return node;
@@ -57,9 +99,9 @@ Node *mul() {
 
 // unary = ("+" | "-")? unary | primary
 Node *unary() {
-  if (consume('+')) {
+  if (consume("+")) {
     return unary();
-  } else if (consume('-')) {
+  } else if (consume("-")) {
     return new_binary(ND_SUB, new_num(0), unary());
   } else {
     return primary();
@@ -69,9 +111,9 @@ Node *unary() {
 // primary = "(" expr ")" | num
 Node *primary() {
   // Assume "(" expr ")" if the next token is "("
-  if (consume('(')) {
+  if (consume("(")) {
     Node *node = expr();
-    expect(')');
+    expect(")");
     return node;
   }
 
@@ -105,8 +147,28 @@ void gen(Node *node) {
       printf("  cqo\n");
       printf("  idiv rdi\n");
       break;
+    case ND_EQ:
+      printf("  cmp rax, rdi\n");
+      printf("  sete al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_NE:
+      printf("  cmp rax, rdi\n");
+      printf("  setne al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_LT:
+      printf("  cmp rax, rdi\n");
+      printf("  setl al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_LE:
+      printf("  cmp rax, rdi\n");
+      printf("  setle al\n");
+      printf("  movzb rax, al\n");
+      break;
     default:
-      fprintf(stderr, "unexpected kind of node: %d", node->kind);
+      fprintf(stderr, "unexpected node kind: %d", node->kind);
   }
 
   printf("  push rax\n");

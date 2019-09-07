@@ -29,8 +29,9 @@ void error_at(char *loc, char *fmt, ...) {
 
 // Advances to a next token and returns true if the next token is an expected symbol,
 // otherwise false.
-bool consume(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op) {
+bool consume(char *op) {
+  if (token->kind != TK_RESERVED || strlen(op) != token->len ||
+      memcmp(token->str, op, token->len)) {
     return false;
   }
   token = token->next;
@@ -39,10 +40,10 @@ bool consume(char op) {
 
 // Advances to a next token if the next token is an expected symbol,
 // otherwise reports an error.
-void expect(char op) {
-  char c = token->str[0];
-  if (token->kind != TK_RESERVED || c != op) {
-    error_at(token->str, "Expected '%c', but got '%c'.", op, c);
+void expect(char *op) {
+  if (token->kind != TK_RESERVED || strlen(op) != token->len ||
+      memcmp(token->str, op, token->len)) {
+    error_at(token->str, "Expected \"%s\", but got \"%s\".", op, token->str);
   }
   token = token->next;
 }
@@ -58,12 +59,17 @@ int expect_number() {
 }
 
 // Creates a new token and links it to the current token `cur`.
-Token *new_token(TokenKind kind, Token *cur, char *str) {
+Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
+  tok->len = len;
   cur->next = tok;
   return tok;
+}
+
+bool start_with(char *s, char *prefix) {
+  return memcmp(s, prefix, strlen(prefix)) == 0;
 }
 
 // Tokenizes an input string `p` and returns the first token.
@@ -78,20 +84,30 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (strchr("+-*/()", *p)) {
-      cur = new_token(TK_RESERVED, cur, p++);
+    // Multi-letter punctuators
+    if (start_with(p, "==") || start_with(p, "!=") || start_with(p, "<=") ||
+        start_with(p, ">=")) {
+      cur = new_token(TK_RESERVED, cur, p, 2);
+      p += 2;
+      continue;
+    }
+
+    if (strchr("+-*/()<>", *p)) {
+      cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
 
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p);
+      cur = new_token(TK_NUM, cur, p, 0);
+      char *prev = p;
       cur->val = strtol(p, &p, 10);
+      cur->len = p - prev;
       continue;
     }
 
     error_at(p, "Could not tokenize the string.");
   }
 
-  new_token(TK_EOF, cur, p);
+  new_token(TK_EOF, cur, p, 0);
   return head.next;
 }
