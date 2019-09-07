@@ -1,5 +1,11 @@
 #include "9cc.h"
 
+// Function declarations
+Node *expr();
+Node *mul();
+Node *unary();
+Node *primary();
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -14,9 +20,6 @@ Node *new_node_num(int val) {
   node->val = val;
   return node;
 }
-
-Node *mul();
-Node *primary();
 
 Node *expr() {
   Node *node = mul();
@@ -33,17 +36,24 @@ Node *expr() {
 }
 
 Node *mul() {
-  Node *node = primary();
+  Node *node = unary();
 
   for (;;) {
     if (consume('*')) {
-      node = new_node(ND_MUL, node, primary());
+      node = new_node(ND_MUL, node, unary());
     } else if (consume('/')) {
-      node = new_node(ND_DIV, node, primary());
+      node = new_node(ND_DIV, node, unary());
     } else {
       return node;
     }
   }
+}
+
+Node *unary() {
+  if (consume('-')) {
+    return new_node(ND_SUB, new_node_num(0), primary());
+  }
+  return primary();
 }
 
 Node *primary() {
