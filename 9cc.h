@@ -62,4 +62,9 @@ struct Node {
 };
 
 Node *expr();
+
+//
+// codegen.c
+//
+
 void gen(Node *node);
