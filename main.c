@@ -2,8 +2,7 @@
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    fprintf(stderr, "The number of arguments is invalid.\n");
-    return 1;
+    error("%s: invalid number of arguments", argv[0]);
   }
 
   // Tokenize and parse input
@@ -16,11 +15,10 @@ int main(int argc, char **argv) {
   printf(".global main\n");
   printf("main:\n");
 
-  // Generate code traversing the AST
+  // Generate assembly with traversing the AST
   gen(node);
 
-  // The top of stack should be an evaluated value of the given expression,
-  // so load it to RAX and make it the return value.
+  // A result must be at the top of the stack, so pop it to RAX to make it a program exit code
   printf("  pop rax\n");
   printf("  ret\n");
   return 0;

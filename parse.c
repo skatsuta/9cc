@@ -1,61 +1,72 @@
 #include "9cc.h"
 
+Node *new_node(NodeKind kind) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = kind;
+  return node;
+}
+
+Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
+  Node *node = new_node(kind);
+  node->lhs = lhs;
+  node->rhs = rhs;
+  return node;
+}
+
+Node *new_num(int val) {
+  Node *node = new_node(ND_NUM);
+  node->val = val;
+  return node;
+}
+
 // Function declarations
 Node *expr();
 Node *mul();
 Node *unary();
 Node *primary();
 
-Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = kind;
-  node->lhs = lhs;
-  node->rhs = rhs;
-  return node;
-}
-
-Node *new_node_num(int val) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_NUM;
-  node->val = val;
-  return node;
-}
-
+// expr = mul ("+" mul | "-" mul)*
 Node *expr() {
   Node *node = mul();
 
   for (;;) {
     if (consume('+')) {
-      node = new_node(ND_ADD, node, mul());
+      node = new_binary(ND_ADD, node, mul());
     } else if (consume('-')) {
-      node = new_node(ND_SUB, node, mul());
+      node = new_binary(ND_SUB, node, mul());
     } else {
       return node;
     }
   }
 }
 
+// mul = unary ("*" unary | "/" unary)*
 Node *mul() {
   Node *node = unary();
 
   for (;;) {
     if (consume('*')) {
-      node = new_node(ND_MUL, node, unary());
+      node = new_binary(ND_MUL, node, unary());
     } else if (consume('/')) {
-      node = new_node(ND_DIV, node, unary());
+      node = new_binary(ND_DIV, node, unary());
     } else {
       return node;
     }
   }
 }
 
+// unary = ("+" | "-")? unary | primary
 Node *unary() {
-  if (consume('-')) {
-    return new_node(ND_SUB, new_node_num(0), primary());
+  if (consume('+')) {
+    return unary();
+  } else if (consume('-')) {
+    return new_binary(ND_SUB, new_num(0), unary());
+  } else {
+    return primary();
   }
-  return primary();
 }
 
+// primary = "(" expr ")" | num
 Node *primary() {
   // Assume "(" expr ")" if the next token is "("
   if (consume('(')) {
@@ -65,7 +76,7 @@ Node *primary() {
   }
 
   // Otherwise it should be an integer
-  return new_node_num(expect_number());
+  return new_num(expect_number());
 }
 
 void gen(Node *node) {

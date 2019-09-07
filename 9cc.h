@@ -25,6 +25,7 @@ struct Token {
   char *str; // String of a token
 };
 
+void error(char *fmt, ...);
 bool consume(char op);
 void expect(char op);
 int expect_number();
