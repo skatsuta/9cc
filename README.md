@@ -10,6 +10,11 @@ This repository is being developed on macOS, while the above book explains a com
 This repository's `Makefile` is configured for supporting this situation, and if your OS is macOS and you have Docker for Mac installed, `make test` runs tests on a Linux container where GCC is installed.
 
 ```bash
+$ sw_vers
+ProductName:    Mac OS X
+ProductVersion: 10.13.6
+BuildVersion:   17G8030
+
 $ make test
 docker container run \
                 --rm \
