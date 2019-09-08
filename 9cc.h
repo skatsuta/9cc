@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L // To suppress the warning against use of `strndup()` 
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -9,7 +10,7 @@
 // token.c
 //
 
-// Kinds of tokens
+// Kind of tokens
 typedef enum {
   TK_RESERVED, // Symbol
   TK_IDENT,    // Identifier
@@ -17,7 +18,7 @@ typedef enum {
   TK_EOF,      // Token representing the end of input
 } TokenKind;
 
-// Token type
+// Type of tokens
 typedef struct Token Token;
 struct Token {
   TokenKind kind; // Type of a token
@@ -25,6 +26,14 @@ struct Token {
   int val;        // Value of a token if its kind is TK_NUM
   char *str;      // String of a token
   int len;        // Length of a token
+};
+
+// Type of local variables
+typedef struct Var Var;
+struct Var {
+  Var *next;  // Next variable or NULL
+  char *name; // Name of a variable
+  int offset; // Offset from RBP (base pointer)
 };
 
 void error(char *fmt, ...);
@@ -41,7 +50,7 @@ extern Token *token;
 // parse.c
 //
 
-// Kind of a node in an abstract syntax tree (AST)
+// Kind of nodes in an abstract syntax tree (AST)
 typedef enum {
   ND_ADD,       // +
   ND_SUB,       // -
@@ -58,21 +67,29 @@ typedef enum {
   ND_NUM,       // Integer
 } NodeKind;
 
-// Class of a node in an abstract syntax tree (AST)
+// Type of nodes in an abstract syntax tree (AST)
 typedef struct Node Node;
 struct Node {
   NodeKind kind; // Kind of a node
   Node *next;    // Next node
   Node *lhs;     // Left-hand side
   Node *rhs;     // Right-hand side
-  char name;     // Name of a variable if kind is ND_VAR
+  Var *var;      // Variable itself if kind is ND_VAR
   long val;      // Value of an integer if kind is ND_NUM
 };
 
-Node *program();
+// Type of functions
+typedef struct Function Function;
+struct Function {
+  Node *node;     // The first statement in a function
+  Var *locals;    // Local variables
+  int stack_size; // Stack size
+};
+
+Function *program();
 
 //
 // codegen.c
 //
 
-void codegen(Node *node);
+void codegen(Function *prog);

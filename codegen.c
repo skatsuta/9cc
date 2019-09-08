@@ -19,8 +19,7 @@ void gen_addr(Node *node) {
     error("The left value of assignment is not a variable");
   }
 
-  int offset = (node->name - 'a' + 1) * 8;
-  printf("  lea rax, [rbp-%d]\n", offset);
+  printf("  lea rax, [rbp-%d]\n", node->var->offset);
   printf("  push rax\n");
 }
 
@@ -103,7 +102,7 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
-void codegen(Node *node) {
+void codegen(Function *prog) {
   // Output the header of assembly code
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
@@ -112,10 +111,11 @@ void codegen(Node *node) {
   // Prologue
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", 8 * 26);
+  printf("  sub rsp, %d\n", prog->stack_size);
 
-  for (Node *n = node; n; n = n->next) {
-    gen(n);
+  // Emit assembly code
+  for (Node *node = prog->node; node; node = node->next) {
+    gen(node);
   }
 
   // Epilogue

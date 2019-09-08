@@ -1,5 +1,21 @@
 #include "9cc.h"
 
+// All local variable instances created during parsing are accumulated to this
+// list.
+Var *locals;
+
+// Finds a local variable by name. If the name is not found in local variables,
+// it returns NULL.
+Var *find_var(Token *tok) {
+  for (Var *var = locals; var; var = var->next) {
+    if (strlen(var->name) == tok->len &&
+        !strncmp(tok->str, var->name, tok->len)) {
+      return var;
+    }
+  }
+  return NULL;
+}
+
 Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -25,16 +41,26 @@ Node *new_num(int val) {
   return node;
 }
 
-Node *new_var(char name) {
+// Creates a new local variable with the given name.
+Var *new_var(char *name) {
+  Var *var = calloc(1, sizeof(Var));
+  var->next = locals;
+  var->name = name;
+  locals = var;
+  return var;
+}
+
+// Creates a new local variable node with the given name.
+Node *new_var_node(Var *var) {
   Node *node = new_node(ND_VAR);
-  node->name = name;
+  node->var = var;
   return node;
 }
 
 bool at_eof(void) { return token->kind == TK_EOF; }
 
 // Function declarations
-Node *program();
+Function *program();
 Node *stmt();
 Node *expr();
 Node *assign();
@@ -46,7 +72,9 @@ Node *unary();
 Node *primary();
 
 // program = stmt*
-Node *program() {
+Function *program() {
+  locals = NULL;
+
   Node head = {};
   Node *cur = &head;
 
@@ -55,7 +83,10 @@ Node *program() {
     cur = cur->next;
   }
 
-  return head.next;
+  Function *prog = calloc(1, sizeof(Function));
+  prog->node = head.next;
+  prog->locals = locals;
+  return prog;
 }
 
 // stmt = ("return")? expr ";"
@@ -165,7 +196,11 @@ Node *primary() {
   // Consume if the token is an identifier
   Token *tok = consume_ident();
   if (tok) {
-    return new_var(*tok->str);
+    Var *var = find_var(tok);
+    if (!var) {
+      var = new_var(strndup(tok->str, tok->len));
+    }
+    return new_var_node(var);
   }
 
   // Otherwise it should be an integer

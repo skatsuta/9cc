@@ -118,7 +118,11 @@ Token *tokenize() {
 
     // Identifiers
     if (is_ident(p)) {
-      cur = new_token(TK_IDENT, cur, p++, 1);
+      char *name = p;
+      while (is_alphanum(*p)) {
+        p++;
+      }
+      cur = new_token(TK_IDENT, cur, name, p - name);
       continue;
     }
 
