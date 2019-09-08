@@ -64,7 +64,7 @@ assert 8 'a=3; z=5; return a+z;'
 assert 3 'foo=3; return foo;'
 assert 6 'foo123 = 1; bar = 2 + 3; return foo123 + bar;'
 
-# If statements
+# "if" statements
 assert 3 'if (0) return 2; return 3;'
 assert 3 'if (1-1) return 2; return 3;'
 assert 2 'if (1) return 2; return 3;'
@@ -73,5 +73,8 @@ assert 3 'if (0) return 2; else return 3; return 4;'
 assert 3 'if (1-1) return 2; else return 3; return 4;'
 assert 2 'if (1) return 2; else return 3; return 4;'
 assert 2 'if (2-1) return 2; else return 3; return 4;'
+
+# "while" statements
+assert 10 'i=0; while(i<10) i=i+1; return i;'
 
 echo 'OK'

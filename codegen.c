@@ -66,6 +66,19 @@ void gen(Node *node) {
     label_seq++;
     return;
   }
+  case ND_WHILE: {
+    int seq = label_seq;
+    printf(".L.begin.%d:\n", seq);
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    printf("  je .L.end.%d\n", seq);
+    gen(node->cons);
+    printf("  jmp .L.begin.%d\n", seq);
+    printf(".L.end.%d:\n", seq);
+    label_seq++;
+    return;
+  }
   case ND_RETURN:
     gen(node->lhs);
     printf("  pop rax\n");

@@ -90,6 +90,7 @@ Function *program() {
 }
 
 // stmt = "if" "(" expr ")" stmt ("else" stmt)?;
+//      | "while" "(" expr ")" stmt
 //      | "return" expr ";"
 //      | expr ";"
 Node *stmt() {
@@ -103,6 +104,16 @@ Node *stmt() {
     if (consume("else")) {
       node->alt = stmt();
     }
+    return node;
+  }
+
+  // Parse "while" statement
+  if (consume("while")) {
+    Node *node = new_node(ND_WHILE);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->cons = stmt();
     return node;
   }
 
