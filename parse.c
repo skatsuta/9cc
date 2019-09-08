@@ -89,8 +89,12 @@ Function *program() {
   return prog;
 }
 
+// Parses an expression statement and creates a new ND_EXPR_STMT node.
+Node *read_expr_stmt() { return new_unary(ND_EXPR_STMT, expr()); }
+
 // stmt = "if" "(" expr ")" stmt ("else" stmt)?;
 //      | "while" "(" expr ")" stmt
+//      | "for" "(" expr ";" expr ";" expr ")" stmt
 //      | "return" expr ";"
 //      | expr ";"
 Node *stmt() {
@@ -113,6 +117,26 @@ Node *stmt() {
     expect("(");
     node->cond = expr();
     expect(")");
+    node->cons = stmt();
+    return node;
+  }
+
+  // Parse "for" statement
+  if (consume("for")) {
+    Node *node = new_node(ND_FOR);
+    expect("(");
+    if (!consume(";")) {
+      node->init = read_expr_stmt();
+      expect(";");
+    }
+    if (!consume(";")) {
+      node->cond = expr();
+      expect(";");
+    }
+    if (!consume(")")) {
+      node->updt = read_expr_stmt();
+      expect(")");
+    }
     node->cons = stmt();
     return node;
   }
