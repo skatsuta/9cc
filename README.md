@@ -32,9 +32,9 @@ OK
 ```
 
 
-## Current status of supported syntax
+## Currently supported syntax of C
 
-The current status of supported syntax in this compiler is as follows:
+Currently this compiler supports the following subset of C language syntax:
 
 ```
 program    = stmt*
