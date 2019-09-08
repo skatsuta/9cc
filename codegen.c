@@ -3,6 +3,7 @@
 void gen(Node *node) {
   switch (node->kind) {
   case ND_NUM:
+    // Push the value to the top of the stack
     printf("  push %ld\n", node->val);
     return;
   case ND_RETURN:
@@ -10,6 +11,15 @@ void gen(Node *node) {
     printf("  pop rax\n");
     printf("  ret\n");
     return;
+  case ND_EXPR_STMT:
+    gen(node->lhs);
+    // Discard the result value at the top of the stack
+    printf("  add rsp, 8\n");
+    return;
+  default:
+    // This section is meaningless but added to suppress -Wswitch compiler
+    // warning
+    break;
   }
 
   gen(node->lhs);
@@ -67,9 +77,6 @@ void codegen(Node *node) {
 
   for (Node *n = node; n; n = n->next) {
     gen(n);
-
-    // Remove a result value at the top of the stack
-    printf("  pop rax\n");
   }
 
   printf("  ret\n");

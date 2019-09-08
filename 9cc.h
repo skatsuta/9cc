@@ -41,16 +41,17 @@ extern Token *token;
 
 // Kind of a node in an abstract syntax tree (AST)
 typedef enum {
-  ND_ADD,    // +
-  ND_SUB,    // -
-  ND_MUL,    // *
-  ND_DIV,    // /
-  ND_EQ,     // ==
-  ND_NE,     // !=
-  ND_LT,     // <
-  ND_LE,     // <=
-  ND_RETURN, // "return"
-  ND_NUM,    // Integer
+  ND_ADD,       // +
+  ND_SUB,       // -
+  ND_MUL,       // *
+  ND_DIV,       // /
+  ND_EQ,        // ==
+  ND_NE,        // !=
+  ND_LT,        // <
+  ND_LE,        // <=
+  ND_RETURN,    // "return"
+  ND_EXPR_STMT, // Expression statement
+  ND_NUM,       // Integer
 } NodeKind;
 
 // Class of a node in an abstract syntax tree (AST)

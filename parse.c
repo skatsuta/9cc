@@ -54,14 +54,8 @@ Node *program() {
 
 // stmt = ("return")? expr ";"
 Node *stmt() {
-  Node *node;
-
-  if (consume("return")) {
-    node = new_unary(ND_RETURN, expr());
-  } else {
-    node = expr();
-  }
-
+  NodeKind kind = consume("return") ? ND_RETURN : ND_EXPR_STMT;
+  Node *node = new_unary(kind, expr());
   expect(";");
   return node;
 }
