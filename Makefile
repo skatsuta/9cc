@@ -20,7 +20,8 @@ test-darwin:
 	docker container run \
 		--rm \
 		--mount type=bind,source=$(PWD),target=/src,consistency=delegated \
-		-w /src gcc make test
+		--workdir /src \
+		gcc make test
 
 # Test command for Linux
 .PHONY: test-linux
