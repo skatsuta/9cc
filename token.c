@@ -31,7 +31,7 @@ void error_at(char *loc, char *fmt, ...) {
 // otherwise false.
 bool consume(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
-      memcmp(token->str, op, token->len)) {
+      strncmp(token->str, op, token->len)) {
     return false;
   }
   token = token->next;
@@ -42,7 +42,7 @@ bool consume(char *op) {
 // otherwise reports an error.
 void expect(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
-      memcmp(token->str, op, token->len)) {
+      strncmp(token->str, op, token->len)) {
     error_at(token->str, "Expected \"%s\", but got \"%s\".", op, token->str);
   }
   token = token->next;
@@ -69,7 +69,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 }
 
 bool start_with(char *s, char *prefix) {
-  return memcmp(s, prefix, strlen(prefix)) == 0;
+  return strncmp(s, prefix, strlen(prefix)) == 0;
 }
 
 // Tokenizes an input string `p` and returns the first token.
