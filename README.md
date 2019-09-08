@@ -38,11 +38,11 @@ The current status of supported syntax in this compiler is as follows:
 
 ```
 program    = stmt*
-stmt       = expr ";"
-           | "if" "(" expr ")" stmt ("else" stmt)?
+stmt       = "if" "(" expr ")" stmt ("else" stmt)?
            | "while" "(" expr ")" stmt
            | "for" "(" expr ";" expr ";" expr ")" stmt
            | "return" expr ";"
+           | expr ";"
 expr       = assign
 assign     = equality ("=" assign)?
 equality   = relational ("==" relational | "!=" relational)*
