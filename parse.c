@@ -25,6 +25,12 @@ Node *new_num(int val) {
   return node;
 }
 
+Node *new_var(char name) {
+  Node *node = new_node(ND_VAR);
+  node->name = name;
+  return node;
+}
+
 bool at_eof(void) { return token->kind == TK_EOF; }
 
 // Function declarations
@@ -60,8 +66,17 @@ Node *stmt() {
   return node;
 }
 
-// expr = equality
-Node *expr() { return equality(); }
+// expr = assign
+Node *expr() { return assign(); }
+
+// assign = equality ("=" assign)?
+Node *assign() {
+  Node *node = equality();
+  if (consume("=")) {
+    node = new_binary(ND_ASSIGN, node, assign());
+  }
+  return node;
+}
 
 // equality = relational ("==" relational | "!=" relational)*
 Node *equality() {
@@ -138,13 +153,19 @@ Node *unary() {
   }
 }
 
-// primary = "(" expr ")" | num
+// primary = "(" expr ")" | ident | num
 Node *primary() {
   // Assume "(" expr ")" if next token is "("
   if (consume("(")) {
     Node *node = expr();
     expect(")");
     return node;
+  }
+
+  // Consume if the token is an identifier
+  Token *tok = consume_ident();
+  if (tok) {
+    return new_var(*tok->str);
   }
 
   // Otherwise it should be an integer

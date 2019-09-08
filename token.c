@@ -27,15 +27,30 @@ void error_at(char *loc, char *fmt, ...) {
   exit(1);
 }
 
-// Advances to a next token and returns true if the next token is an expected
-// symbol, otherwise false.
+// Consumes the current token and returns true if it matches `op`, otherwise
+// does nothing and returns false.
 bool consume(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
       strncmp(token->str, op, token->len)) {
     return false;
   }
+
+  // Advance the current token
   token = token->next;
   return true;
+}
+
+// Consumes the current token and returns an identifier if it is an identifier,
+// otherwise does nothing and returns NULL.
+Token *consume_ident() {
+  if (token->kind != TK_IDENT) {
+    return NULL;
+  }
+
+  Token *tok = token;
+  // Advance the current token
+  token = token->next;
+  return tok;
 }
 
 // Advances to a next token if the next token is an expected symbol,
@@ -73,10 +88,13 @@ bool start_with(char *s, char *prefix) {
   return strncmp(s, prefix, strlen(prefix)) == 0;
 }
 
-bool is_alphanum(char c) {
-  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
-         ('0' <= c && c <= '9') || (c == '_');
+bool is_alpha(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_');
 }
+
+bool is_alphanum(char c) { return is_alpha(c) || ('0' <= c && c <= '9'); }
+
+bool is_ident(char *p) { return is_alpha(*p); }
 
 // Tokenizes an input string `p` and returns the first token.
 Token *tokenize() {
@@ -95,6 +113,12 @@ Token *tokenize() {
     if (start_with(p, "return") && !is_alphanum(p[6])) {
       cur = new_token(TK_RESERVED, cur, p, 6);
       p += 6;
+      continue;
+    }
+
+    // Identifiers
+    if (is_ident(p)) {
+      cur = new_token(TK_IDENT, cur, p++, 1);
       continue;
     }
 

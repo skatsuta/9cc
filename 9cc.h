@@ -12,6 +12,7 @@
 // Kinds of tokens
 typedef enum {
   TK_RESERVED, // Symbol
+  TK_IDENT,    // Identifier
   TK_NUM,      // Integer token
   TK_EOF,      // Token representing the end of input
 } TokenKind;
@@ -28,6 +29,7 @@ struct Token {
 
 void error(char *fmt, ...);
 bool consume(char *op);
+Token *consume_ident();
 void expect(char *op);
 int expect_number();
 Token *tokenize();
@@ -49,8 +51,10 @@ typedef enum {
   ND_NE,        // !=
   ND_LT,        // <
   ND_LE,        // <=
+  ND_ASSIGN,    // =
   ND_RETURN,    // "return"
   ND_EXPR_STMT, // Expression statement
+  ND_VAR,       // Variable
   ND_NUM,       // Integer
 } NodeKind;
 
@@ -61,6 +65,7 @@ struct Node {
   Node *next;    // Next node
   Node *lhs;     // Left-hand side
   Node *rhs;     // Right-hand side
+  char name;     // Name of a variable if kind is ND_VAR
   long val;      // Value of an integer if kind is ND_NUM
 };
 
