@@ -30,7 +30,7 @@ void error(char *fmt, ...);
 bool consume(char *op);
 void expect(char *op);
 int expect_number();
-Token *tokenize(char *p);
+Token *tokenize();
 
 extern char *user_input;
 extern Token *token;
@@ -56,15 +56,16 @@ typedef enum {
 typedef struct Node Node;
 struct Node {
   NodeKind kind; // Kind of a node
+  Node *next; // Next node
   Node *lhs; // Left-hand side
   Node *rhs; // Right-hand side
-  int val; // Value of an integer if kind is ND_NUM
+  long val; // Value of an integer if kind is ND_NUM
 };
 
-Node *expr();
+Node *program();
 
 //
 // codegen.c
 //
 
-void gen(Node *node);
+void codegen(Node *node);

@@ -2,7 +2,7 @@
 
 void gen(Node *node) {
   if (node->kind == ND_NUM) {
-    printf("  push %d\n", node->val);
+    printf("  push %ld\n", node->val);
     return;
   }
 
@@ -51,4 +51,20 @@ void gen(Node *node) {
   }
 
   printf("  push rax\n");
+}
+
+void codegen(Node *node) {
+  // Output the header of assembly code
+  printf(".intel_syntax noprefix\n");
+  printf(".global main\n");
+  printf("main:\n");
+
+  for (Node *n = node; n; n = n->next) {
+    gen(n);
+
+    // Remove a result value at the top of the stack
+    printf("  pop rax\n");
+  }
+
+  printf("  ret\n");
 }

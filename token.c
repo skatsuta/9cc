@@ -73,9 +73,9 @@ bool start_with(char *s, char *prefix) {
 }
 
 // Tokenizes an input string `p` and returns the first token.
-Token *tokenize(char *p) {
-  Token head;
-  head.next = NULL;
+Token *tokenize() {
+  char *p = user_input;
+  Token head = {};
   Token *cur = &head;
 
   while (*p) {
@@ -92,7 +92,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (strchr("+-*/()<>", *p)) {
+    if (ispunct(*p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }

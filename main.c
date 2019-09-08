@@ -7,19 +7,11 @@ int main(int argc, char **argv) {
 
   // Tokenize and parse input
   user_input = argv[1];
-  token = tokenize(user_input);
-  Node *node = expr();
-
-  // Output the header of assembly code
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
+  token = tokenize();
+  Node *node = program();
 
   // Generate assembly with traversing the AST
-  gen(node);
+  codegen(node);
 
-  // A result must be at the top of the stack, so pop it to RAX to make it a program exit code
-  printf("  pop rax\n");
-  printf("  ret\n");
   return 0;
 }
