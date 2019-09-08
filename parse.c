@@ -6,6 +6,12 @@ Node *new_node(NodeKind kind) {
   return node;
 }
 
+Node *new_unary(NodeKind kind, Node *expr) {
+  Node *node = new_node(kind);
+  node->lhs = expr;
+  return node;
+}
+
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = new_node(kind);
   node->lhs = lhs;
@@ -19,9 +25,7 @@ Node *new_num(int val) {
   return node;
 }
 
-bool at_eof(void) {
-  return token->kind == TK_EOF;
-}
+bool at_eof(void) { return token->kind == TK_EOF; }
 
 // Function declarations
 Node *program();
@@ -48,17 +52,22 @@ Node *program() {
   return head.next;
 }
 
-// stmt = expr ";"
+// stmt = ("return")? expr ";"
 Node *stmt() {
-  Node *node = expr();
+  Node *node;
+
+  if (consume("return")) {
+    node = new_unary(ND_RETURN, expr());
+  } else {
+    node = expr();
+  }
+
   expect(";");
   return node;
 }
 
 // expr = equality
-Node *expr() {
-  return equality();
-}
+Node *expr() { return equality(); }
 
 // equality = relational ("==" relational | "!=" relational)*
 Node *equality() {

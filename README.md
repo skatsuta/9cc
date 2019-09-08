@@ -32,7 +32,7 @@ The current status of supported syntax in C is as follows:
 
 ```
 program    = stmt*
-stmt       = expr ";"
+stmt       = ("return")? expr ";"
 expr       = equality
 equality   = relational ("==" relational | "!=" relational)*
 relational = add ("<" add | "<=" add | ">" add | ">=" add)*

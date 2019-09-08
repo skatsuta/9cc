@@ -73,6 +73,11 @@ bool start_with(char *s, char *prefix) {
   return strncmp(s, prefix, strlen(prefix)) == 0;
 }
 
+bool is_alphanum(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
+         ('0' <= c && c <= '9') || (c == '_');
+}
+
 // Tokenizes an input string `p` and returns the first token.
 Token *tokenize() {
   char *p = user_input;
@@ -80,8 +85,16 @@ Token *tokenize() {
   Token *cur = &head;
 
   while (*p) {
+    // Whitespaces
     if (isspace(*p)) {
       p++;
+      continue;
+    }
+
+    // Keywords
+    if (start_with(p, "return") && !is_alphanum(p[6])) {
+      cur = new_token(TK_RESERVED, cur, p, 6);
+      p += 6;
       continue;
     }
 
@@ -93,11 +106,13 @@ Token *tokenize() {
       continue;
     }
 
+    // Single-letter punctuators
     if (ispunct(*p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
 
+    // Numbers
     if (isdigit(*p)) {
       cur = new_token(TK_NUM, cur, p, 0);
       char *prev = p;
