@@ -27,8 +27,8 @@ void error_at(char *loc, char *fmt, ...) {
   exit(1);
 }
 
-// Advances to a next token and returns true if the next token is an expected symbol,
-// otherwise false.
+// Advances to a next token and returns true if the next token is an expected
+// symbol, otherwise false.
 bool consume(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
       strncmp(token->str, op, token->len)) {
@@ -48,7 +48,8 @@ void expect(char *op) {
   token = token->next;
 }
 
-// Advances to a next token if the next token is an integer, otherwise reports an error.
+// Advances to a next token if the next token is an integer, otherwise reports
+// an error.
 int expect_number() {
   if (token->kind != TK_NUM) {
     error_at(token->str, "Expected an integer, but got a non-integer.");
