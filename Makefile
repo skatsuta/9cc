@@ -10,7 +10,9 @@ $(OBJS): 9cc.h
 
 .PHONY: test
 test:
-	docker container run --mount type=bind,source=$(PWD),target=/src,consistency=delegated \
+	docker container run \
+		--rm \
+		--mount type=bind,source=$(PWD),target=/src,consistency=delegated \
 		-w /src gcc make test-linux
 
 .PHONY: test-linux
