@@ -89,8 +89,24 @@ Function *program() {
   return prog;
 }
 
-// stmt = ("return")? expr ";"
+// stmt = "if" "(" expr ")" stmt ("else" stmt)?;
+//      | "return" expr ";"
+//      | expr ";"
 Node *stmt() {
+  // Parse "if"-"else" statement
+  if (consume("if")) {
+    Node *node = new_node(ND_IF);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->cons = stmt();
+    if (consume("else")) {
+      node->alt = stmt();
+    }
+    return node;
+  }
+
+  // Parse "return" or expression statement
   NodeKind kind = consume("return") ? ND_RETURN : ND_EXPR_STMT;
   Node *node = new_unary(kind, expr());
   expect(";");

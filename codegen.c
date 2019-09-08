@@ -1,5 +1,8 @@
 #include "9cc.h"
 
+// Global sequence number which is used for jump labels
+int label_seq = 1;
+
 void store() {
   printf("  pop rdi\n");
   printf("  pop rax\n");
@@ -44,6 +47,25 @@ void gen(Node *node) {
     gen(node->rhs);
     store();
     return;
+  case ND_IF: {
+    int seq = label_seq;
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    if (node->alt) {
+      printf("  je .L.else.%d\n", seq);
+      gen(node->cons);
+      printf("  jmp .L.end.%d\n", seq);
+      printf(".L.else.%d:\n", seq);
+      gen(node->alt);
+    } else {
+      printf("  je .L.end.%d\n", seq);
+      gen(node->cons);
+    }
+    printf(".L.end.%d:\n", seq);
+    label_seq++;
+    return;
+  }
   case ND_RETURN:
     gen(node->lhs);
     printf("  pop rax\n");

@@ -94,7 +94,30 @@ bool is_alpha(char c) {
 
 bool is_alphanum(char c) { return is_alpha(c) || ('0' <= c && c <= '9'); }
 
-bool is_ident(char *p) { return is_alpha(*p); }
+// Reads a reserved symbol or keyword from `p`. If no reserved token is found,
+// it returns NULL.
+char *read_reserved(char *p) {
+  // Keywords
+  char *kw[] = {"return", "if", "else"};
+
+  for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
+    int len = strlen(kw[i]);
+    if (start_with(p, kw[i]) && !is_alphanum(p[len])) {
+      return kw[i];
+    }
+  }
+
+  // Multi-letter punctuators
+  char *ops[] = {"==", "!=", "<=", ">="};
+
+  for (int i = 0; i < sizeof(ops) / sizeof(*ops); i++) {
+    if (start_with(p, ops[i])) {
+      return ops[i];
+    }
+  }
+
+  return NULL;
+}
 
 // Tokenizes an input string `p` and returns the first token.
 Token *tokenize() {
@@ -109,28 +132,22 @@ Token *tokenize() {
       continue;
     }
 
-    // Keywords
-    if (start_with(p, "return") && !is_alphanum(p[6])) {
-      cur = new_token(TK_RESERVED, cur, p, 6);
-      p += 6;
+    // Keywords or multi-letter punctuators
+    char *kw = read_reserved(p);
+    if (kw) {
+      int len = strlen(kw);
+      cur = new_token(TK_RESERVED, cur, p, len);
+      p += len;
       continue;
     }
 
     // Identifiers
-    if (is_ident(p)) {
+    if (is_alpha(*p)) {
       char *name = p;
       while (is_alphanum(*p)) {
         p++;
       }
       cur = new_token(TK_IDENT, cur, name, p - name);
-      continue;
-    }
-
-    // Multi-letter punctuators
-    if (start_with(p, "==") || start_with(p, "!=") || start_with(p, "<=") ||
-        start_with(p, ">=")) {
-      cur = new_token(TK_RESERVED, cur, p, 2);
-      p += 2;
       continue;
     }
 

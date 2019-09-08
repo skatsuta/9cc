@@ -1,4 +1,5 @@
-#define _POSIX_C_SOURCE 200809L // To suppress the warning against use of `strndup()` 
+// Define _POSIX_C_SOURCE suppress the warning against use of `strndup()`
+#define _POSIX_C_SOURCE 200809L
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -62,6 +63,7 @@ typedef enum {
   ND_LE,        // <=
   ND_ASSIGN,    // =
   ND_RETURN,    // "return"
+  ND_IF,        // "if"
   ND_EXPR_STMT, // Expression statement
   ND_VAR,       // Variable
   ND_NUM,       // Integer
@@ -72,10 +74,17 @@ typedef struct Node Node;
 struct Node {
   NodeKind kind; // Kind of a node
   Node *next;    // Next node
-  Node *lhs;     // Left-hand side
-  Node *rhs;     // Right-hand side
-  Var *var;      // Variable itself if kind is ND_VAR
-  long val;      // Value of an integer if kind is ND_NUM
+
+  Node *lhs; // Left-hand side
+  Node *rhs; // Right-hand side
+
+  // "if" statement
+  Node *cond; // Condition
+  Node *cons; // Consequence
+  Node *alt;  // Alternative
+
+  Var *var; // Variable itself if kind is ND_VAR
+  long val; // Value of an integer if kind is ND_NUM
 };
 
 // Type of functions
