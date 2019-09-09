@@ -51,6 +51,6 @@ relational = add ("<" add | "<=" add | ">" add | ">=" add)*
 add        = mul ("+" mul | "-" mul)*
 mul        = unary ("*" unary | "/" unary)*
 unary      = ("+" | "-")? unary | primary
-primary    = "(" expr ")" | ident args? | num
-args       = "(" ")"
+primary    = "(" expr ")" | ident func-args? | num
+func-args  = "(" (assign ("," assign)*)? ")"
 ```

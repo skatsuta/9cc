@@ -2,6 +2,7 @@
 
 // Global sequence number which is used for jump labels
 int label_seq = 1;
+char *arg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 void store() {
   printf("  pop rdi\n");
@@ -105,10 +106,23 @@ void gen(Node *node) {
       gen(n);
     }
     return;
-  case ND_CALL:
+  case ND_CALL: {
+    // Push arguments onto the stack
+    int n_args = 0;
+    for (Node *arg = node->args; arg; arg = arg->next) {
+      gen(arg);
+      n_args++;
+    }
+
+    // Set arguments in reverse order
+    for (int i = n_args - 1; i >= 0; i--) {
+      printf("  pop %s\n", arg_regs[i]);
+    }
+
     printf("  call %s\n", node->func_name);
     printf("  push rax\n");
     return;
+  }
   case ND_RETURN:
     gen(node->lhs);
     printf("  pop rax\n");

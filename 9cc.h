@@ -94,6 +94,7 @@ struct Node {
 
   // Function call
   char *func_name; // Function name
+  Node *args;      // Function arguments
 
   Var *var; // Variable itself if kind is ND_VAR
   long val; // Value of an integer if kind is ND_NUM

@@ -240,6 +240,22 @@ Node *mul() {
   }
 }
 
+// func-args    = "(" (assign ("," assign)*)? ")"
+Node *func_args() {
+  if (consume(")")) {
+    return NULL;
+  }
+
+  Node *head = assign();
+  Node *cur = head;
+  while (consume(",")) {
+    cur->next = assign();
+    cur = cur->next;
+  }
+
+  expect(")");
+  return head;
+}
 // unary = ("+" | "-")? unary | primary
 Node *unary() {
   if (consume("+")) {
@@ -251,8 +267,7 @@ Node *unary() {
   }
 }
 
-// primary = "(" expr ")" | ident args? | num
-// args    = "(" ")"
+// primary = "(" expr ")" | ident func-args? | num
 Node *primary() {
   // Assume "(" expr ")" if next token is "("
   if (consume("(")) {
@@ -266,9 +281,9 @@ Node *primary() {
   if (tok) {
     // Parse a function call
     if (consume("(")) {
-      expect(")");
       Node *node = new_node(ND_CALL);
       node->func_name = strndup(tok->str, tok->len);
+      node->args = func_args();
       return node;
     }
 
