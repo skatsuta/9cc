@@ -119,8 +119,25 @@ void gen(Node *node) {
       printf("  pop %s\n", arg_regs[i]);
     }
 
+    // According to x86-64 ABI, RSP must be aligned to a 16 byte boundary before
+    // calling a function.
+    // RAX is set to zero for a variadic function.
+    int seq = label_seq;
+    printf("  mov rax, rsp\n");
+    printf("  and rax, 15\n");
+    printf("  jnz .L.call.%d\n", seq);
+    printf("  mov rax, 0\n");
     printf("  call %s\n", node->func_name);
+    printf("  jmp .L.end.%d\n", seq);
+    printf(".L.call.%d:\n", seq);
+    printf("  sub rsp, 8\n");
+    printf("  mov rax, 0\n");
+    printf("  call %s\n", node->func_name);
+    printf("  add rsp, 8\n");
+    printf(".L.end.%d:\n", seq);
     printf("  push rax\n");
+    label_seq++;
+
     return;
   }
   case ND_RETURN:
