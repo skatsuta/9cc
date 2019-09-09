@@ -4,13 +4,20 @@ set -u
 CC=gcc
 BIN=9cc
 TMP=tmp
+TMP2=tmp2
+
+cat <<EOF | ${CC} -xc -c -o ${TMP2}.o -
+int ret3() { return 3; }
+int ret5() { return 5; }
+EOF
 
 assert() {
   local expected="$1"
   local input="$2"
 
   ./${BIN} "${input}" > ${TMP}.s
-  ${CC} -o ${TMP} ${TMP}.s
+  ${CC} -o ${TMP} ${TMP}.s ${TMP2}.o
+
   ./${TMP}
   local actual="$?"
 
@@ -84,5 +91,9 @@ assert 55 'i=0; j=0; while(i<=10) {j=i+j; i=i+1;} return j;'
 # "for" statements
 assert 55 'i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j;'
 assert 3 'for (;;) return 3; return 5;'
+
+# Function calls
+assert 3 'return ret3();'
+assert 5 'return ret5();'
 
 echo 'OK'

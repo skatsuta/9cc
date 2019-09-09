@@ -251,7 +251,8 @@ Node *unary() {
   }
 }
 
-// primary = "(" expr ")" | ident | num
+// primary = "(" expr ")" | ident args? | num
+// args    = "(" ")"
 Node *primary() {
   // Assume "(" expr ")" if next token is "("
   if (consume("(")) {
@@ -263,6 +264,15 @@ Node *primary() {
   // Consume if the token is an identifier
   Token *tok = consume_ident();
   if (tok) {
+    // Parse a function call
+    if (consume("(")) {
+      expect(")");
+      Node *node = new_node(ND_CALL);
+      node->func_name = strndup(tok->str, tok->len);
+      return node;
+    }
+
+    // Parse a variable
     Var *var = find_var(tok);
     if (!var) {
       var = new_var(strndup(tok->str, tok->len));
