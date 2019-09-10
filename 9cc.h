@@ -42,6 +42,7 @@ bool consume(char *op);
 Token *consume_ident();
 void expect(char *op);
 int expect_number();
+char *expect_ident();
 Token *tokenize();
 
 extern char *user_input;
@@ -89,10 +90,10 @@ struct Node {
   Node *init; // Initialization in "for"
   Node *updt; // Update in "for"
 
-  // Block
+  // Block or function body
   Node *body;
 
-  // Function call
+  // Function call or definition
   char *func_name; // Function name
   Node *args;      // Function arguments
 
@@ -103,9 +104,12 @@ struct Node {
 // Type of functions
 typedef struct Function Function;
 struct Function {
+  char *name;     // Name of a function
   Node *node;     // The first statement in a function
   Var *locals;    // Local variables
   int stack_size; // Stack size
+
+  Function *next; // Next function
 };
 
 Function *program();

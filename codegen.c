@@ -1,8 +1,10 @@
 #include "9cc.h"
 
+char *arg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
 // Global sequence number which is used for jump labels
 int label_seq = 1;
-char *arg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+char *func_name;
 
 void store() {
   printf("  pop rdi\n");
@@ -143,7 +145,7 @@ void gen(Node *node) {
   case ND_RETURN:
     gen(node->lhs);
     printf("  pop rax\n");
-    printf("  jmp .L.return\n");
+    printf("  jmp .L.return.%s\n", func_name);
     return;
   default:
     // This section is meaningless but added to suppress -Wswitch compiler
@@ -201,22 +203,27 @@ void gen(Node *node) {
 void codegen(Function *prog) {
   // Output the header of assembly code
   printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
 
-  // Prologue
-  printf("  push rbp\n");
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", prog->stack_size);
+  // Emit assembly code of function definitions
+  for (Function *fn = prog; fn; fn = fn->next) {
+    printf(".global %s\n", fn->name);
+    printf("%s:\n", fn->name);
+    func_name = fn->name;
 
-  // Emit assembly code
-  for (Node *node = prog->node; node; node = node->next) {
-    gen(node);
+    // Prologue
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, %d\n", fn->stack_size);
+
+    // Emit assembly code of function body statements
+    for (Node *node = fn->node; node; node = node->next) {
+      gen(node);
+    }
+
+    // Epilogue
+    printf(".L.return.%s:\n", func_name);
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
   }
-
-  // Epilogue
-  printf(".L.return:\n");
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
 }

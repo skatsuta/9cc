@@ -63,8 +63,8 @@ void expect(char *op) {
   token = token->next;
 }
 
-// Advances to a next token if the next token is an integer, otherwise reports
-// an error.
+// Returns an integer and advances to a next token if the current token is an
+// integer, otherwise reports an error.
 int expect_number() {
   if (token->kind != TK_NUM) {
     error_at(token->str, "Expected an integer, but got a non-integer.");
@@ -72,6 +72,17 @@ int expect_number() {
   int val = token->val;
   token = token->next;
   return val;
+}
+
+// Returns an identifier and advances to a next token if the current token is an
+// identifier, otherwise reports an error.
+char *expect_ident() {
+  if (token->kind != TK_IDENT) {
+    error_at(token->str, "Expected an integer, but got a non-integer.");
+  }
+  char *s = strndup(token->str, token->len);
+  token = token->next;
+  return s;
 }
 
 // Creates a new token and links it to the current token `cur`.

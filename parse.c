@@ -61,6 +61,7 @@ bool at_eof(void) { return token->kind == TK_EOF; }
 
 // Function declarations
 Function *program();
+Function *function();
 Node *stmt();
 Node *expr();
 Node *assign();
@@ -71,22 +72,41 @@ Node *mul();
 Node *unary();
 Node *primary();
 
-// program = stmt*
+// program = function*
 Function *program() {
+  Function head = {};
+  Function *cur = &head;
+
+  while (!at_eof()) {
+    cur->next = function();
+    cur = cur->next;
+  }
+
+  return head.next;
+}
+
+// function = ident "(" ")" "{" stmt* "}"
+Function *function() {
   locals = NULL;
+
+  char *name = expect_ident();
+  expect("(");
+  expect(")");
+  expect("{");
 
   Node head = {};
   Node *cur = &head;
 
-  while (!at_eof()) {
+  while (!consume("}")) {
     cur->next = stmt();
     cur = cur->next;
   }
 
-  Function *prog = calloc(1, sizeof(Function));
-  prog->node = head.next;
-  prog->locals = locals;
-  return prog;
+  Function *fn = calloc(1, sizeof(Function));
+  fn->name = name;
+  fn->node = head.next;
+  fn->locals = locals;
+  return fn;
 }
 
 // Parses an expression statement and creates a new ND_EXPR_STMT node.

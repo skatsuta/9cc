@@ -37,7 +37,8 @@ OK
 Currently this compiler supports the following subset of C language syntax:
 
 ```
-program    = stmt*
+program    = function*
+function   = ident "(" ")" "{" stmt* "}"
 stmt       = "if" "(" expr ")" stmt ("else" stmt)?
            | "while" "(" expr ")" stmt
            | "for" "(" expr ";" expr ";" expr ")" stmt
