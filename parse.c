@@ -288,12 +288,16 @@ Node *mul() {
   }
 }
 
-// unary = ("+" | "-")? unary | primary
+// unary = ("+" | "-")? unary | "&" unary | "*" unary | primary
 Node *unary() {
   if (consume("+")) {
     return unary();
   } else if (consume("-")) {
     return new_binary(ND_SUB, new_num(0), unary());
+  } else if (consume("&")) {
+    return new_unary(ND_ADDR, unary());
+  } else if (consume("*")) {
+    return new_unary(ND_DEREF, unary());
   } else {
     return primary();
   }
