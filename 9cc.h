@@ -37,6 +37,13 @@ struct Var {
   int offset; // Offset from RBP (base pointer)
 };
 
+// List of variables
+typedef struct VarList VarList;
+struct VarList {
+  VarList *next;
+  Var *var;
+};
+
 void error(char *fmt, ...);
 bool consume(char *op);
 Token *consume_ident();
@@ -104,10 +111,12 @@ struct Node {
 // Type of functions
 typedef struct Function Function;
 struct Function {
-  char *name;     // Name of a function
-  Node *node;     // The first statement in a function
-  Var *locals;    // Local variables
-  int stack_size; // Stack size
+  char *name;      // Name of a function
+  VarList *params; // Parameters of a function
+
+  Node *node;      // The first statement in a function
+  VarList *locals; // Local variables
+  int stack_size;  // Stack size
 
   Function *next; // Next function
 };

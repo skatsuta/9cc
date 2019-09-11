@@ -109,5 +109,8 @@ assert 21 'main() { return add6(1, 2, 3, 4, 5, 6); }'
 # Function definitions
 assert 7 'main() { return ret7(); } ret7() { return 7; }'
 assert 7 'main() { return ret7(); return 8; } ret7() { return 7; return 9; }'
+assert 7 'main() { return add2(3, 4); } add2(x, y) { return x + y; }'
+assert 1 'main() { return sub2(4, 3); } sub2(x, y) { return x - y; }'
+assert 55 'main() { return fib(9); } fib(x) { if (x<=1) return 1; fib(x-1) + fib(x-2); }'
 
 echo 'OK'

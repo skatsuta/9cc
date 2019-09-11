@@ -2,12 +2,13 @@
 
 // All local variable instances created during parsing are accumulated to this
 // list.
-Var *locals;
+VarList *locals;
 
 // Finds a local variable by name. If the name is not found in local variables,
 // it returns NULL.
 Var *find_var(Token *tok) {
-  for (Var *var = locals; var; var = var->next) {
+  for (VarList *vl = locals; vl; vl = vl->next) {
+    Var *var = vl->var;
     if (strlen(var->name) == tok->len &&
         !strncmp(tok->str, var->name, tok->len)) {
       return var;
@@ -41,12 +42,21 @@ Node *new_num(int val) {
   return node;
 }
 
+// Creates a list of variables.
+VarList *new_var_list(Var *var) {
+  VarList *vl = calloc(1, sizeof(VarList));
+  vl->var = var;
+  return vl;
+}
+
 // Creates a new local variable with the given name.
 Var *new_var(char *name) {
   Var *var = calloc(1, sizeof(Var));
-  var->next = locals;
   var->name = name;
-  locals = var;
+
+  VarList *vl = new_var_list(var);
+  vl->next = locals;
+  locals = vl;
   return var;
 }
 
@@ -71,6 +81,7 @@ Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
+Node *func_args();
 
 // program = function*
 Function *program() {
@@ -85,25 +96,42 @@ Function *program() {
   return head.next;
 }
 
-// function = ident "(" ")" "{" stmt* "}"
+// Reads function parameters and returns a list of them.
+VarList *read_func_params() {
+  if (consume(")")) {
+    return NULL;
+  }
+
+  VarList *head = new_var_list(new_var(expect_ident()));
+  VarList *cur = head;
+
+  while (!consume(")")) {
+    expect(",");
+    cur->next = new_var_list(new_var(expect_ident()));
+    cur = cur->next;
+  }
+
+  return head;
+}
+
+// function = ident "(" params? ")" "{" stmt* "}"
+// params   = ident ("," ident)*
 Function *function() {
   locals = NULL;
 
-  char *name = expect_ident();
+  Function *fn = calloc(1, sizeof(Function));
+  fn->name = expect_ident();
   expect("(");
-  expect(")");
+  fn->params = read_func_params();
   expect("{");
 
   Node head = {};
   Node *cur = &head;
-
   while (!consume("}")) {
     cur->next = stmt();
     cur = cur->next;
   }
 
-  Function *fn = calloc(1, sizeof(Function));
-  fn->name = name;
   fn->node = head.next;
   fn->locals = locals;
   return fn;
@@ -260,22 +288,6 @@ Node *mul() {
   }
 }
 
-// func-args    = "(" (assign ("," assign)*)? ")"
-Node *func_args() {
-  if (consume(")")) {
-    return NULL;
-  }
-
-  Node *head = assign();
-  Node *cur = head;
-  while (consume(",")) {
-    cur->next = assign();
-    cur = cur->next;
-  }
-
-  expect(")");
-  return head;
-}
 // unary = ("+" | "-")? unary | primary
 Node *unary() {
   if (consume("+")) {
@@ -317,4 +329,21 @@ Node *primary() {
 
   // Otherwise it should be an integer
   return new_num(expect_number());
+}
+
+// func-args = "(" (assign ("," assign)*)? ")"
+Node *func_args() {
+  if (consume(")")) {
+    return NULL;
+  }
+
+  Node *head = assign();
+  Node *cur = head;
+  while (consume(",")) {
+    cur->next = assign();
+    cur = cur->next;
+  }
+
+  expect(")");
+  return head;
 }

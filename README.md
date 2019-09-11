@@ -38,7 +38,8 @@ Currently this compiler supports the following subset of C language syntax:
 
 ```
 program    = function*
-function   = ident "(" ")" "{" stmt* "}"
+function   = ident "(" params? ")" "{" stmt* "}"
+params     = ident ("," ident)*
 stmt       = "if" "(" expr ")" stmt ("else" stmt)?
            | "while" "(" expr ")" stmt
            | "for" "(" expr ";" expr ";" expr ")" stmt

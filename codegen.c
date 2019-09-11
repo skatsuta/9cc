@@ -200,30 +200,41 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
+void gen_func(Function *fn) {
+  printf(".global %s\n", fn->name);
+  printf("%s:\n", fn->name);
+  func_name = fn->name;
+
+  // Prologue
+  printf("  push rbp\n");
+  printf("  mov rbp, rsp\n");
+  printf("  sub rsp, %d\n", fn->stack_size);
+
+  // Push arguments onto the stack
+  int i = 0;
+  for (VarList *vl = fn->params; vl; vl = vl->next) {
+    printf("  mov [rbp-%d], %s\n", vl->var->offset, arg_regs[i]);
+    i++;
+  }
+
+  // Emit assembly code of function body statements
+  for (Node *node = fn->node; node; node = node->next) {
+    gen(node);
+  }
+
+  // Epilogue
+  printf(".L.return.%s:\n", func_name);
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
+  printf("  ret\n");
+}
+
 void codegen(Function *prog) {
   // Output the header of assembly code
   printf(".intel_syntax noprefix\n");
 
   // Emit assembly code of function definitions
   for (Function *fn = prog; fn; fn = fn->next) {
-    printf(".global %s\n", fn->name);
-    printf("%s:\n", fn->name);
-    func_name = fn->name;
-
-    // Prologue
-    printf("  push rbp\n");
-    printf("  mov rbp, rsp\n");
-    printf("  sub rsp, %d\n", fn->stack_size);
-
-    // Emit assembly code of function body statements
-    for (Node *node = fn->node; node; node = node->next) {
-      gen(node);
-    }
-
-    // Epilogue
-    printf(".L.return.%s:\n", func_name);
-    printf("  mov rsp, rbp\n");
-    printf("  pop rbp\n");
-    printf("  ret\n");
+    gen_func(fn);
   }
 }
