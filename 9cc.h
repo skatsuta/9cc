@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Type Type;
+
 //
 // token.c
 //
@@ -62,8 +64,11 @@ extern Token *token;
 
 // Kind of nodes in an abstract syntax tree (AST)
 typedef enum {
-  ND_ADD,       // +
-  ND_SUB,       // -
+  ND_ADD,       // num + num
+  ND_PTR_ADD,   // ptr + num or num + ptr
+  ND_SUB,       // num - num
+  ND_PTR_SUB,   // ptr - num
+  ND_PTR_DIFF,  // ptr - ptr
   ND_MUL,       // *
   ND_DIV,       // /
   ND_EQ,        // ==
@@ -90,6 +95,7 @@ struct Node {
   NodeKind kind; // Kind of a node
   Node *next;    // Next node
   Token *tok;    // Representative token
+  Type *type;    // Type of a node
 
   Node *lhs; // Left-hand side
   Node *rhs; // Right-hand side
@@ -132,3 +138,17 @@ Function *program();
 //
 
 void codegen(Function *prog);
+
+//
+// type.c
+//
+
+typedef enum { TYPE_INT, TYPE_PTR } TypeKind;
+
+struct Type {
+  TypeKind kind; // Kind of type
+  Type *base;    // Base type
+};
+
+bool is_integer(Type *type);
+void add_type(Node *node);

@@ -74,6 +74,7 @@ bool at_eof(void) { return token->kind == TK_EOF; }
 Function *program();
 Function *function();
 Node *stmt();
+Node *stmt_inner();
 Node *expr();
 Node *assign();
 Node *equality();
@@ -144,13 +145,19 @@ Node *read_expr_stmt() {
   return new_unary(ND_EXPR_STMT, expr(), tok);
 }
 
+Node *stmt() {
+  Node *node = stmt_inner();
+  add_type(node);
+  return node;
+}
+
 // stmt = "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr ";" expr ";" expr ")" stmt
 //      | "return" expr ";"
 //      | "{" stmt* "}"
 //      | expr ";"
-Node *stmt() {
+Node *stmt_inner() {
   Token *tok;
 
   // Parse "if"-"else" statement
@@ -273,6 +280,40 @@ Node *relational() {
   }
 }
 
+Node *new_add(Node *lhs, Node *rhs, Token *tok) {
+  add_type(lhs);
+  add_type(rhs);
+
+  if (is_integer(lhs->type) && is_integer(rhs->type)) {
+    return new_binary(ND_ADD, lhs, rhs, tok);
+  } else if (lhs->type->base && is_integer(rhs->type)) {
+    return new_binary(ND_PTR_ADD, lhs, rhs, tok);
+  } else if (is_integer(lhs->type) && rhs->type->base) {
+    return new_binary(ND_PTR_ADD, rhs, lhs, tok);
+  }
+
+  error_tok(tok, "invalid operands");
+  // Never reach here
+  return NULL;
+}
+
+Node *new_sub(Node *lhs, Node *rhs, Token *tok) {
+  add_type(lhs);
+  add_type(rhs);
+
+  if (is_integer(lhs->type) && is_integer(rhs->type)) {
+    return new_binary(ND_SUB, lhs, rhs, tok);
+  } else if (lhs->type->base && is_integer(rhs->type)) {
+    return new_binary(ND_PTR_SUB, lhs, rhs, tok);
+  } else if (lhs->type->base && rhs->type->base) {
+    return new_binary(ND_PTR_DIFF, lhs, rhs, tok);
+  }
+
+  error_tok(tok, "invalid operands");
+  // Never reach here
+  return NULL;
+}
+
 // add = mul ("+" mul | "-" mul)*
 Node *add() {
   Node *node = mul();
@@ -280,9 +321,9 @@ Node *add() {
 
   for (;;) {
     if ((tok = consume("+"))) {
-      node = new_binary(ND_ADD, node, mul(), tok);
+      node = new_add(node, mul(), tok);
     } else if ((tok = consume("-"))) {
-      node = new_binary(ND_SUB, node, mul(), tok);
+      node = new_sub(node, mul(), tok);
     } else {
       return node;
     }
