@@ -15,7 +15,7 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
-void error_at(char *loc, char *fmt, ...) {
+void verror_at(char *loc, char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
 
@@ -27,17 +27,30 @@ void error_at(char *loc, char *fmt, ...) {
   exit(1);
 }
 
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  verror_at(loc, fmt, ap);
+}
+
+void error_tok(Token *tok, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  verror_at(tok->str, fmt, ap);
+}
+
 // Consumes the current token and returns true if it matches `op`, otherwise
 // does nothing and returns false.
-bool consume(char *op) {
+Token *consume(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
       strncmp(token->str, op, token->len)) {
-    return false;
+    return NULL;
   }
 
+  Token *t = token;
   // Advance the current token
   token = token->next;
-  return true;
+  return t;
 }
 
 // Consumes the current token and returns an identifier if it is an identifier,
@@ -58,7 +71,7 @@ Token *consume_ident() {
 void expect(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
       strncmp(token->str, op, token->len)) {
-    error_at(token->str, "Expected \"%s\", but got \"%s\".", op, token->str);
+    error_tok(token, "Expected \"%s\", but got \"%s\".", op);
   }
   token = token->next;
 }
@@ -67,7 +80,7 @@ void expect(char *op) {
 // integer, otherwise reports an error.
 int expect_number() {
   if (token->kind != TK_NUM) {
-    error_at(token->str, "Expected an integer, but got a non-integer.");
+    error_tok(token, "Expected an integer, but got a non-integer.");
   }
   int val = token->val;
   token = token->next;
@@ -78,7 +91,7 @@ int expect_number() {
 // identifier, otherwise reports an error.
 char *expect_ident() {
   if (token->kind != TK_IDENT) {
-    error_at(token->str, "Expected an integer, but got a non-integer.");
+    error_tok(token, "Expected an integer, but got a non-integer.");
   }
   char *s = strndup(token->str, token->len);
   token = token->next;

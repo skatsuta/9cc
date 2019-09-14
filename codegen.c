@@ -32,7 +32,7 @@ void gen_addr(Node *node) {
     gen(node->lhs);
     return;
   default:
-    error("The left value of assignment is not a variable");
+    error_tok(node->tok, "not a left value");
   }
 }
 
