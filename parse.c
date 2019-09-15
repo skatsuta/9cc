@@ -51,9 +51,10 @@ VarList *new_var_list(Var *var) {
 }
 
 // Creates a new local variable with the given name.
-Var *new_var(char *name) {
+Var *new_var(char *name, Type *type) {
   Var *var = calloc(1, sizeof(Var));
   var->name = name;
+  var->type = type;
 
   VarList *vl = new_var_list(var);
   vl->next = locals;
@@ -73,8 +74,10 @@ bool at_eof(void) { return token->kind == TK_EOF; }
 // Function declarations
 Function *program();
 Function *function();
+Type *basetype();
 Node *stmt();
 Node *stmt_inner();
+Node *declaration();
 Node *expr();
 Node *assign();
 Node *equality();
@@ -98,30 +101,47 @@ Function *program() {
   return head.next;
 }
 
+// basetype = "int" "*"*
+Type *basetype() {
+  expect("int");
+  Type *type = int_type;
+  while (consume("*")) {
+    type = pointer_to(type);
+  }
+  return type;
+}
+
+VarList *read_func_param() {
+  Type *type = basetype();
+  return new_var_list(new_var(expect_ident(), type));
+}
+
 // Reads function parameters and returns a list of them.
 VarList *read_func_params() {
   if (consume(")")) {
     return NULL;
   }
 
-  VarList *head = new_var_list(new_var(expect_ident()));
+  VarList *head = read_func_param();
   VarList *cur = head;
 
   while (!consume(")")) {
     expect(",");
-    cur->next = new_var_list(new_var(expect_ident()));
+    cur->next = read_func_param();
     cur = cur->next;
   }
 
   return head;
 }
 
-// function = ident "(" params? ")" "{" stmt* "}"
-// params   = ident ("," ident)*
+// function = basetype ident "(" params? ")" "{" stmt* "}"
+// params   = param ("," param)*
+// param    = basetype ident
 Function *function() {
   locals = NULL;
 
   Function *fn = calloc(1, sizeof(Function));
+  basetype();
   fn->name = expect_ident();
   expect("(");
   fn->params = read_func_params();
@@ -156,6 +176,7 @@ Node *stmt() {
 //      | "for" "(" expr ";" expr ";" expr ")" stmt
 //      | "return" expr ";"
 //      | "{" stmt* "}"
+//      | declaration
 //      | expr ";"
 Node *stmt_inner() {
   Token *tok;
@@ -225,10 +246,32 @@ Node *stmt_inner() {
     return node;
   }
 
+  if ((tok = peek("int"))) {
+    return declaration();
+  }
+
   // Parse expression statement
   Node *node = read_expr_stmt();
   expect(";");
   return node;
+}
+
+// declaration = basetype ident ("=" expr)? ";"
+Node *declaration() {
+  Token *tok = token;
+  Type *type = basetype();
+  Var *var = new_var(expect_ident(), type);
+
+  if (consume(";")) {
+    return new_node(ND_NULL, tok);
+  }
+
+  expect("=");
+  Node *lhs = new_var_node(var, tok);
+  Node *rhs = expr();
+  expect(";");
+  Node *node = new_binary(ND_ASSIGN, lhs, rhs, tok);
+  return new_unary(ND_EXPR_STMT, node, tok);
 }
 
 // expr = assign
@@ -386,7 +429,7 @@ Node *primary() {
     // Parse a variable
     Var *var = find_var(tok);
     if (!var) {
-      var = new_var(strndup(tok->str, tok->len));
+      error_tok(tok, "undefined variable");
     }
     return new_var_node(var, tok);
   }

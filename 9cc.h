@@ -36,6 +36,7 @@ typedef struct Var Var;
 struct Var {
   Var *next;  // Next variable or NULL
   char *name; // Name of a variable
+  Type *type; // Type of a variable
   int offset; // Offset from RBP (base pointer)
 };
 
@@ -48,9 +49,10 @@ struct VarList {
 
 void error(char *fmt, ...);
 void error_tok(Token *tok, char *fmt, ...);
+Token *peek(char *s);
 Token *consume(char *op);
 Token *consume_ident();
-void expect(char *op);
+void expect(char *s);
 int expect_number();
 char *expect_ident();
 Token *tokenize();
@@ -87,6 +89,7 @@ typedef enum {
   ND_CALL,      // Function call
   ND_VAR,       // Variable
   ND_NUM,       // Integer
+  ND_NULL,      // Empty expression
 } NodeKind;
 
 // Type of nodes in an abstract syntax tree (AST)
@@ -151,4 +154,7 @@ struct Type {
 };
 
 bool is_integer(Type *type);
+Type *pointer_to(Type *type);
 void add_type(Node *node);
+
+extern Type *int_type;

@@ -39,6 +39,8 @@ void gen_addr(Node *node) {
 // Generate code for a given node.
 void gen(Node *node) {
   switch (node->kind) {
+  case ND_NULL:
+    return;
   case ND_NUM:
     // Push the value to the top of the stack
     printf("  push %ld\n", node->val);

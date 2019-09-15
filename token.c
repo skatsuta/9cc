@@ -39,6 +39,16 @@ void error_tok(Token *tok, char *fmt, ...) {
   verror_at(tok->str, fmt, ap);
 }
 
+// Returns its token if the current token matches a given string s which is a
+// reserved keyword or an operator, otherwise returns NULL.
+Token *peek(char *s) {
+  if (token->kind != TK_RESERVED || strlen(s) != token->len ||
+      strncmp(token->str, s, token->len)) {
+    return NULL;
+  }
+  return token;
+}
+
 // Consumes the current token and returns true if it matches `op`, otherwise
 // does nothing and returns false.
 Token *consume(char *op) {
@@ -68,10 +78,9 @@ Token *consume_ident() {
 
 // Advances to a next token if the next token is an expected symbol,
 // otherwise reports an error.
-void expect(char *op) {
-  if (token->kind != TK_RESERVED || strlen(op) != token->len ||
-      strncmp(token->str, op, token->len)) {
-    error_tok(token, "Expected \"%s\", but got \"%s\".", op);
+void expect(char *s) {
+  if (!peek(s)) {
+    error_tok(token, "Expected \"%s\", but got \"%s\".", s);
   }
   token = token->next;
 }
@@ -122,7 +131,7 @@ bool is_alphanum(char c) { return is_alpha(c) || ('0' <= c && c <= '9'); }
 // it returns NULL.
 char *read_reserved(char *p) {
   // Keywords
-  char *kw[] = {"return", "if", "else", "while", "for"};
+  char *kw[] = {"return", "if", "else", "while", "for", "int"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
     int len = strlen(kw[i]);

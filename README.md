@@ -37,22 +37,26 @@ OK
 Currently this compiler supports the following subset of C language syntax:
 
 ```
-program    = function*
-function   = ident "(" params? ")" "{" stmt* "}"
-params     = ident ("," ident)*
-stmt       = "if" "(" expr ")" stmt ("else" stmt)?
-           | "while" "(" expr ")" stmt
-           | "for" "(" expr ";" expr ";" expr ")" stmt
-           | "return" expr ";"
-           | "{" stmt* "}"
-           | expr ";"
-expr       = assign
-assign     = equality ("=" assign)?
-equality   = relational ("==" relational | "!=" relational)*
-relational = add ("<" add | "<=" add | ">" add | ">=" add)*
-add        = mul ("+" mul | "-" mul)*
-mul        = unary ("*" unary | "/" unary)*
-unary      = ("+" | "-")? unary | "&" unary | "*" unary | primary
-primary    = "(" expr ")" | ident func-args? | num
-func-args  = "(" (assign ("," assign)*)? ")"
+program     = function*
+basetype    = "int" "*"*
+function    = basetype ident "(" params? ")" "{" stmt* "}"
+params      = param ("," param)*
+param       = basetype ident
+stmt        = "if" "(" expr ")" stmt ("else" stmt)?
+            | "while" "(" expr ")" stmt
+            | "for" "(" expr ";" expr ";" expr ")" stmt
+            | "return" expr ";"
+            | "{" stmt* "}"
+            | declaration
+            | expr ";"
+declaration = basetype ident ("=" assign)? ";"
+expr        = assign
+assign      = equality ("=" assign)?
+equality    = relational ("==" relational | "!=" relational)*
+relational  = add ("<" add | "<=" add | ">" add | ">=" add)*
+add         = mul ("+" mul | "-" mul)*
+mul         = unary ("*" unary | "/" unary)*
+unary       = ("+" | "-")? unary | "&" unary | "*" unary | primary
+primary     = "(" expr ")" | ident func-args? | num
+func-args   = "(" (assign ("," assign)*)? ")"
 ```
