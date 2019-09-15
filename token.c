@@ -80,7 +80,7 @@ Token *consume_ident() {
 // otherwise reports an error.
 void expect(char *s) {
   if (!peek(s)) {
-    error_tok(token, "Expected \"%s\", but got \"%s\".", s);
+    error_tok(token, "Expected \"%s\"", s);
   }
   token = token->next;
 }
