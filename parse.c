@@ -111,9 +111,22 @@ Type *basetype() {
   return type;
 }
 
+Type *read_type_suffix(Type *base) {
+  if (!consume("[")) {
+    return base;
+  }
+
+  // Parse array declaration
+  int size = expect_number();
+  expect("]");
+  return array_of(base, size);
+}
+
 VarList *read_func_param() {
   Type *type = basetype();
-  return new_var_list(new_var(expect_ident(), type));
+  char *name = expect_ident();
+  type = read_type_suffix(type);
+  return new_var_list(new_var(name, type));
 }
 
 // Reads function parameters and returns a list of them.
@@ -256,11 +269,13 @@ Node *stmt_inner() {
   return node;
 }
 
-// declaration = basetype ident ("=" expr)? ";"
+// declaration = basetype ident ("[" num "]")* ("=" expr)? ";"
 Node *declaration() {
   Token *tok = token;
   Type *type = basetype();
-  Var *var = new_var(expect_ident(), type);
+  char *name = expect_ident();
+  type = read_type_suffix(type);
+  Var *var = new_var(name, type);
 
   if (consume(";")) {
     return new_node(ND_NULL, tok);

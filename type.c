@@ -1,13 +1,23 @@
 #include "9cc.h"
 
-Type *int_type = &(Type){TYPE_INT};
+Type *int_type = &(Type){.kind = TYPE_INT, .size = 8};
 
 bool is_integer(Type *type) { return type->kind == TYPE_INT; }
 
 Type *pointer_to(Type *base) {
   Type *type = calloc(1, sizeof(Type));
   type->kind = TYPE_PTR;
+  type->size = 8;
   type->base = base;
+  return type;
+}
+
+Type *array_of(Type *base, int len) {
+  Type *type = calloc(1, sizeof(Type));
+  type->kind = TYPE_ARRAY;
+  type->size = base->size * len;
+  type->base = base;
+  type->array_len = len;
   return type;
 }
 
@@ -54,10 +64,14 @@ void add_type(Node *node) {
     node->type = node->var->type;
     return;
   case ND_ADDR:
-    node->type = pointer_to(node->lhs->type);
+    if (node->lhs->type->kind == TYPE_ARRAY) {
+      node->type = pointer_to(node->lhs->type->base);
+    } else {
+      node->type = pointer_to(node->lhs->type);
+    }
     return;
   case ND_DEREF:
-    if (node->lhs->type->kind != TYPE_PTR) {
+    if (!node->lhs->type->base) {
       error_tok(node->tok, "invalid pointer dereference");
     }
     node->type = node->lhs->type->base;

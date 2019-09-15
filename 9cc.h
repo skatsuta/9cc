@@ -146,15 +146,18 @@ void codegen(Function *prog);
 // type.c
 //
 
-typedef enum { TYPE_INT, TYPE_PTR } TypeKind;
+typedef enum { TYPE_INT, TYPE_PTR, TYPE_ARRAY } TypeKind;
 
 struct Type {
   TypeKind kind; // Kind of type
+  int size;      // sizeof() value
   Type *base;    // Base type
+  int array_len; // Length of an array
 };
 
 bool is_integer(Type *type);
 Type *pointer_to(Type *type);
+Type *array_of(Type *base, int size);
 void add_type(Node *node);
 
 extern Type *int_type;

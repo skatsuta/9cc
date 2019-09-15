@@ -49,7 +49,7 @@ stmt        = "if" "(" expr ")" stmt ("else" stmt)?
             | "{" stmt* "}"
             | declaration
             | expr ";"
-declaration = basetype ident ("=" assign)? ";"
+declaration = basetype ident ("[" num "]")* ("=" assign)? ";"
 expr        = assign
 assign      = equality ("=" assign)?
 equality    = relational ("==" relational | "!=" relational)*
