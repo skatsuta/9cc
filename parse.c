@@ -406,7 +406,7 @@ Node *mul() {
   }
 }
 
-// unary = ("+" | "-" | "&" | "*")? unary
+// unary = ("+" | "-" | "&" | "*" | "sizeof")? unary
 //       | postfix
 Node *unary() {
   Token *tok;
@@ -418,6 +418,10 @@ Node *unary() {
     return new_unary(ND_ADDR, unary(), tok);
   } else if ((tok = consume("*"))) {
     return new_unary(ND_DEREF, unary(), tok);
+  } else if ((tok = consume("sizeof"))) {
+    Node *node = unary();
+    add_type(node);
+    return new_num(node->type->size, tok);
   } else {
     return postfix();
   }

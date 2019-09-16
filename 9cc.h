@@ -16,6 +16,7 @@ typedef struct Type Type;
 // Kind of tokens
 typedef enum {
   TK_RESERVED, // Symbol
+  TK_SIZEOF,   // `sizeof` operator
   TK_IDENT,    // Identifier
   TK_NUM,      // Integer token
   TK_EOF,      // Token representing the end of input
