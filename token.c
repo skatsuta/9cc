@@ -15,10 +15,7 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
-void verror_at(char *loc, char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-
+void verror_at(char *loc, char *fmt, va_list ap) {
   int pos = loc - user_input;
   fprintf(stderr, "%s\n", user_input);
   fprintf(stderr, "%*s^ ", pos, ""); // Print leading whitespaces
