@@ -1,8 +1,9 @@
 #include "9cc.h"
 
-// All local variable instances created during parsing are accumulated to this
-// list.
+// All local and global variable instances created during parsing are
+// accumulated to this list.
 VarList *locals;
+VarList *globals;
 
 // Finds a local variable by name. If the name is not found in local variables,
 // it returns NULL.
@@ -14,6 +15,15 @@ Var *find_var(Token *tok) {
       return var;
     }
   }
+
+  for (VarList *vl = globals; vl; vl = vl->next) {
+    Var *var = vl->var;
+    if (strlen(var->name) == tok->len &&
+        !strncmp(tok->str, var->name, tok->len)) {
+      return var;
+    }
+  }
+
   return NULL;
 }
 
@@ -50,15 +60,33 @@ VarList *new_var_list(Var *var) {
   return vl;
 }
 
-// Creates a new local variable with the given name.
-Var *new_var(char *name, Type *type) {
+// Creates a new local or global variable with the given name, based on
+// `is_local` flag.
+Var *new_var(char *name, Type *type, bool is_local) {
   Var *var = calloc(1, sizeof(Var));
   var->name = name;
   var->type = type;
+  var->is_local = is_local;
+  return var;
+}
+
+// Creates a new local variable with the given name.
+Var *new_local_var(char *name, Type *type) {
+  Var *var = new_var(name, type, true);
 
   VarList *vl = new_var_list(var);
   vl->next = locals;
   locals = vl;
+  return var;
+}
+
+// Creates a new global variable with the given name.
+Var *new_global_var(char *name, Type *type) {
+  Var *var = new_var(name, type, false);
+
+  VarList *vl = new_var_list(var);
+  vl->next = globals;
+  globals = vl;
   return var;
 }
 
@@ -72,9 +100,9 @@ Node *new_var_node(Var *var, Token *tok) {
 bool at_eof(void) { return token->kind == TK_EOF; }
 
 // Function declarations
-Function *program();
 Function *function();
 Type *basetype();
+void global_var();
 Node *stmt();
 Node *stmt_inner();
 Node *declaration();
@@ -89,17 +117,35 @@ Node *postfix();
 Node *primary();
 Node *func_args();
 
-// program = function*
-Function *program() {
+// Determines whether the next top-level item is a function or a global variable
+// by looking ahead input tokens.
+bool is_function() {
+  Token *tok = token;
+  basetype();
+  bool is_func = consume_ident() && consume("(");
+  token = tok;
+  return is_func;
+}
+
+// program = (global-var | function)*
+Program *program() {
   Function head = {};
   Function *cur = &head;
+  globals = NULL;
 
   while (!at_eof()) {
-    cur->next = function();
-    cur = cur->next;
+    if (is_function()) {
+      cur->next = function();
+      cur = cur->next;
+    } else {
+      global_var();
+    }
   }
 
-  return head.next;
+  Program *prog = calloc(1, sizeof(Program));
+  prog->globals = globals;
+  prog->fns = head.next;
+  return prog;
 }
 
 // basetype = "int" "*"*
@@ -124,11 +170,20 @@ Type *read_type_suffix(Type *base) {
   return array_of(base, size);
 }
 
+// global-var = basetype ident ("[" num "]")* ";"
+void global_var() {
+  Type *type = basetype();
+  char *name = expect_ident();
+  type = read_type_suffix(type);
+  expect(";");
+  new_global_var(name, type);
+}
+
 VarList *read_func_param() {
   Type *type = basetype();
   char *name = expect_ident();
   type = read_type_suffix(type);
-  return new_var_list(new_var(name, type));
+  return new_var_list(new_local_var(name, type));
 }
 
 // Reads function parameters and returns a list of them.
@@ -277,7 +332,7 @@ Node *declaration() {
   Type *type = basetype();
   char *name = expect_ident();
   type = read_type_suffix(type);
-  Var *var = new_var(name, type);
+  Var *var = new_local_var(name, type);
 
   if (consume(";")) {
     return new_node(ND_NULL, tok);

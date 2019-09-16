@@ -24,10 +24,16 @@ void gen(Node *node);
 // Pushes the given node's address to the stack.
 void gen_addr(Node *node) {
   switch (node->kind) {
-  case ND_VAR:
-    printf("  lea rax, [rbp-%d]\n", node->var->offset);
-    printf("  push rax\n");
+  case ND_VAR: {
+    Var *var = node->var;
+    if (var->is_local) {
+      printf("  lea rax, [rbp-%d]\n", var->offset);
+      printf("  push rax\n");
+    } else {
+      printf("  push offset %s\n", var->name);
+    }
     return;
+  }
   case ND_DEREF:
     gen(node->lhs);
     return;
@@ -241,41 +247,54 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
-void gen_func(Function *fn) {
-  printf(".global %s\n", fn->name);
-  printf("%s:\n", fn->name);
-  func_name = fn->name;
+// Emits data segment.
+void emit_data(Program *prog) {
+  printf(".data\n");
 
-  // Prologue
-  printf("  push rbp\n");
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", fn->stack_size);
-
-  // Push arguments onto the stack
-  int i = 0;
-  for (VarList *vl = fn->params; vl; vl = vl->next) {
-    printf("  mov [rbp-%d], %s\n", vl->var->offset, arg_regs[i]);
-    i++;
+  for (VarList *vl = prog->globals; vl; vl = vl->next) {
+    Var *var = vl->var;
+    printf("%s:\n", var->name);
+    printf("  .zero %d\n", var->type->size);
   }
-
-  // Emit assembly code of function body statements
-  for (Node *node = fn->node; node; node = node->next) {
-    gen(node);
-  }
-
-  // Epilogue
-  printf(".L.return.%s:\n", func_name);
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
 }
 
-void codegen(Function *prog) {
+// Emits text segment.
+void emit_text(Program *prog) {
+  printf(".text\n");
+
+  for (Function *fn = prog->fns; fn; fn = fn->next) {
+    printf(".global %s\n", fn->name);
+    printf("%s:\n", fn->name);
+    func_name = fn->name;
+
+    // Prologue
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, %d\n", fn->stack_size);
+
+    // Push arguments onto the stack
+    int i = 0;
+    for (VarList *vl = fn->params; vl; vl = vl->next) {
+      printf("  mov [rbp-%d], %s\n", vl->var->offset, arg_regs[i]);
+      i++;
+    }
+
+    // Emit assembly code of function body statements
+    for (Node *node = fn->node; node; node = node->next) {
+      gen(node);
+    }
+
+    // Epilogue
+    printf(".L.return.%s:\n", func_name);
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
+  }
+}
+
+void codegen(Program *prog) {
   // Output the header of assembly code
   printf(".intel_syntax noprefix\n");
-
-  // Emit assembly code of function definitions
-  for (Function *fn = prog; fn; fn = fn->next) {
-    gen_func(fn);
-  }
+  emit_data(prog);
+  emit_text(prog);
 }

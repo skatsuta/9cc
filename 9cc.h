@@ -32,12 +32,14 @@ struct Token {
   int len;        // Length of a token
 };
 
-// Type of local variables
+// Type of variables
 typedef struct Var Var;
 struct Var {
-  Var *next;  // Next variable or NULL
-  char *name; // Name of a variable
-  Type *type; // Type of a variable
+  char *name;    // Name of a variable
+  Type *type;    // Type of a variable
+  bool is_local; // Whether a variable is local or not (global)
+
+  // Local variable
   int offset; // Offset from RBP (base pointer)
 };
 
@@ -135,13 +137,18 @@ struct Function {
   Function *next; // Next function
 };
 
-Function *program();
+typedef struct {
+  VarList *globals;
+  Function *fns;
+} Program;
+
+Program *program();
 
 //
 // codegen.c
 //
 
-void codegen(Function *prog);
+void codegen(Program *prog);
 
 //
 // type.c
