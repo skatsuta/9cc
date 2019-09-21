@@ -1,5 +1,28 @@
 #include "9cc.h"
 
+char *read_file(char *path) {
+  // Open and read the file
+  FILE *fp = fopen(path, "r");
+  if (!fp) {
+    error("cannot open %s: %s", path, strerror(errno));
+  }
+
+  int max_file_size = 10 * 1024 * 1024;
+  char *buf = malloc(max_file_size);
+  int size = fread(buf, 1, max_file_size - 2, fp);
+  if (!feof(fp)) {
+    error("%s: file too large", path);
+  }
+
+  // Ensure that the string ends with "\n\0"
+  if (size == 0 || buf[size - 1] != '\n') {
+    buf[size] = '\n';
+    size++;
+  }
+  buf[size] = '\0';
+  return buf;
+}
+
 // Aligns `n` to the multiple of `align`.
 //
 // How to compute padding is explained at
@@ -12,7 +35,8 @@ int main(int argc, char **argv) {
   }
 
   // Tokenize and parse input
-  user_input = argv[1];
+  filename = argv[1];
+  user_input = read_file(filename);
   token = tokenize();
   Program *prog = program();
 

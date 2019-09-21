@@ -21,7 +21,7 @@ assert() {
   local expected="$1"
   local input="$2"
 
-  ./${BIN} "${input}" > ${TMP}.s
+  ./${BIN} <(echo "${input}") > ${TMP}.s
   ${CC} -o ${TMP} ${TMP}.s ${TMP2}.o
 
   ./${TMP}

@@ -1,6 +1,7 @@
 // Define _POSIX_C_SOURCE suppress the warning against use of `strndup()`
 #define _POSIX_C_SOURCE 200809L
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -69,6 +70,7 @@ int expect_number();
 char *expect_ident();
 Token *tokenize();
 
+extern char *filename;
 extern char *user_input;
 extern Token *token;
 
