@@ -150,6 +150,63 @@ char *read_reserved(char *p) {
   return NULL;
 }
 
+char get_escape_char(char c) {
+  switch (c) {
+  case 'a':
+    return '\a';
+  case 'b':
+    return '\b';
+  case 't':
+    return '\t';
+  case 'n':
+    return '\n';
+  case 'v':
+    return '\v';
+  case 'f':
+    return '\f';
+  case 'r':
+    return '\r';
+  case 'e':
+    return 27;
+  case '0':
+    return 0;
+  default:
+    return c;
+  }
+}
+
+Token *read_string_literal(Token *cur, char *start) {
+  char *p = start + 1;
+  char buf[1024];
+  int len = 0;
+
+  for (;;) {
+    if (len == sizeof(buf)) {
+      error_at(start, "string literal too large");
+    }
+    if (*p == '\0') {
+      error_at(start, "unclosed string literal");
+    }
+    if (*p == '"') {
+      break;
+    }
+
+    if (*p == '\\') {
+      p++;
+      buf[len] = get_escape_char(*p);
+    } else {
+      buf[len] = *p;
+    }
+    len++;
+    p++;
+  }
+
+  Token *tok = new_token(TK_STR, cur, start, p - start + 1);
+  tok->contents = strndup(buf, len);
+  tok->cont_len = len + 1;
+  return tok;
+}
+
 // Tokenizes an input string `p` and returns the first token.
 Token *tokenize() {
   char *p = user_input;
@@ -165,22 +222,8 @@ Token *tokenize() {
 
     // String literals
     if (*p == '"') {
-      char *start = p;
-      p++;
-      while (*p && *p != '"') {
-        p++;
-      }
-      if (!*p) {
-        error_at(start, "unclosed string literal");
-      }
-      p++;
-
-      int len = p - start;
-      cur = new_token(TK_STR, cur, start, len);
-      // Copy a string from the character immediately after the opening quote
-      // to the character immediately before the closing quote
-      cur->contents = strndup(start + 1, len - 2);
-      cur->cont_len = len - 1;
+      cur = read_string_literal(cur, p);
+      p += cur->len;
       continue;
     }
 
