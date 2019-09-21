@@ -1,5 +1,9 @@
 #include "9cc.h"
 
+// Aligns `n` to the multiple of `align`.
+//
+// How to compute padding is explained at
+// https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding.
 int align_to(int n, int align) { return (n + align - 1) & ~(align - 1); }
 
 int main(int argc, char **argv) {
