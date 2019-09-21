@@ -249,6 +249,25 @@ Token *tokenize() {
       continue;
     }
 
+    // Skip a line comment
+    if (start_with(p, "//")) {
+      p += 2;
+      while (*p != '\n') {
+        p++;
+      }
+      continue;
+    }
+
+    // Skip a block comment
+    if (start_with(p, "/*")) {
+      char *start = strstr(p + 2, "*/");
+      if (!start) {
+        error_at(p, "unclosed block comment");
+      }
+      p = start + 2;
+      continue;
+    }
+
     // String literals
     if (*p == '"') {
       cur = read_string_literal(cur, p);

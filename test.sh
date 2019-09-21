@@ -200,4 +200,9 @@ assert 106 'int main() { return "\j"[0]; }'
 assert 107 'int main() { return "\k"[0]; }'
 assert 108 'int main() { return "\l"[0]; }'
 
+# Line and block comments
+assert 2 'int main() { /* return 1; */ return 2; }'
+assert 2 'int main() { // return 1;
+    return 2; }'
+
 echo 'OK'
