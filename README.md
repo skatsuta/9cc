@@ -40,7 +40,7 @@ Currently this compiler supports the following subset of C language syntax:
 program     = (global-var | function)*
 global-var  = basetype ident ("[" num "]")* ";"
 function    = basetype ident "(" params? ")" "{" stmt* "}"
-basetype    = "int" "*"*
+basetype    = ("char" | "int") "*"*
 params      = param ("," param)*
 param       = basetype ident
 stmt        = "if" "(" expr ")" stmt ("else" stmt)?

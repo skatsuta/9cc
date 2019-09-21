@@ -148,10 +148,16 @@ Program *program() {
   return prog;
 }
 
-// basetype = "int" "*"*
+// basetype = ("char" | "int") "*"*
 Type *basetype() {
-  expect("int");
-  Type *type = int_type;
+  Type *type;
+  if (consume("char")) {
+    type = char_type;
+  } else {
+    expect("int");
+    type = int_type;
+  }
+
   while (consume("*")) {
     type = pointer_to(type);
   }
@@ -241,6 +247,9 @@ Node *stmt() {
   return node;
 }
 
+// Returns true if the next token represents a type.
+bool is_type_name() { return peek("char") || peek("int"); }
+
 // stmt = "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr ";" expr ";" expr ")" stmt
@@ -316,7 +325,7 @@ Node *stmt_inner() {
     return node;
   }
 
-  if ((tok = peek("int"))) {
+  if (is_type_name()) {
     return declaration();
   }
 

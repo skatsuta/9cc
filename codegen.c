@@ -1,21 +1,30 @@
 #include "9cc.h"
 
-char *arg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+char *arg_regs_1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+char *arg_regs_8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 // Global sequence number which is used for jump labels
 int label_seq = 1;
 char *func_name;
 
-void store() {
+void store(Type *type) {
   printf("  pop rdi\n");
   printf("  pop rax\n");
-  printf("  mov [rax], rdi\n");
+  if (type->size == 1) {
+    printf("  mov [rax], dil\n");
+  } else {
+    printf("  mov [rax], rdi\n");
+  }
   printf("  push rdi\n");
 }
 
-void load() {
+void load(Type *type) {
   printf("  pop rax\n");
-  printf("  mov rax, [rax]\n");
+  if (type->size == 1) {
+    printf("  movsx rax, byte ptr [rax]\n");
+  } else {
+    printf("  mov rax, [rax]\n");
+  }
   printf("  push rax\n");
 }
 
@@ -66,13 +75,13 @@ void gen(Node *node) {
   case ND_VAR:
     gen_addr(node);
     if (node->type->kind != TYPE_ARRAY) {
-      load();
+      load(node->type);
     }
     return;
   case ND_ASSIGN:
     gen_lval(node->lhs);
     gen(node->rhs);
-    store();
+    store(node->type);
     return;
   case ND_ADDR:
     gen_addr(node->lhs);
@@ -80,7 +89,7 @@ void gen(Node *node) {
   case ND_DEREF:
     gen(node->lhs);
     if (node->type->kind != TYPE_ARRAY) {
-      load();
+      load(node->type);
     }
     return;
   case ND_IF: {
@@ -151,7 +160,7 @@ void gen(Node *node) {
 
     // Set arguments in reverse order
     for (int i = n_args - 1; i >= 0; i--) {
-      printf("  pop %s\n", arg_regs[i]);
+      printf("  pop %s\n", arg_regs_8[i]);
     }
 
     // According to x86-64 ABI, RSP must be aligned to a 16 byte boundary before
@@ -247,15 +256,9 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
-// Emits data segment.
-void emit_data(Program *prog) {
-  printf(".data\n");
-
-  for (VarList *vl = prog->globals; vl; vl = vl->next) {
-    Var *var = vl->var;
-    printf("%s:\n", var->name);
-    printf("  .zero %d\n", var->type->size);
-  }
+void load_arg(Var *var, int idx) {
+  char *reg = var->type->size == 1 ? arg_regs_1[idx] : arg_regs_8[idx];
+  printf("  mov [rbp-%d], %s\n", var->offset, reg);
 }
 
 // Emits text segment.
@@ -275,7 +278,7 @@ void emit_text(Program *prog) {
     // Push arguments onto the stack
     int i = 0;
     for (VarList *vl = fn->params; vl; vl = vl->next) {
-      printf("  mov [rbp-%d], %s\n", vl->var->offset, arg_regs[i]);
+      load_arg(vl->var, i);
       i++;
     }
 
@@ -289,6 +292,17 @@ void emit_text(Program *prog) {
     printf("  mov rsp, rbp\n");
     printf("  pop rbp\n");
     printf("  ret\n");
+  }
+}
+
+// Emits data segment.
+void emit_data(Program *prog) {
+  printf(".data\n");
+
+  for (VarList *vl = prog->globals; vl; vl = vl->next) {
+    Var *var = vl->var;
+    printf("%s:\n", var->name);
+    printf("  .zero %d\n", var->type->size);
   }
 }
 
