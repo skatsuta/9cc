@@ -163,6 +163,27 @@ Token *tokenize() {
       continue;
     }
 
+    // String literals
+    if (*p == '"') {
+      char *start = p;
+      p++;
+      while (*p && *p != '"') {
+        p++;
+      }
+      if (!*p) {
+        error_at(start, "unclosed string literal");
+      }
+      p++;
+
+      int len = p - start;
+      cur = new_token(TK_STR, cur, start, len);
+      // Copy a string from the character immediately after the opening quote
+      // to the character immediately before the closing quote
+      cur->contents = strndup(start + 1, len - 2);
+      cur->cont_len = len - 1;
+      continue;
+    }
+
     // Keywords or multi-letter punctuators
     char *kw = read_reserved(p);
     if (kw) {

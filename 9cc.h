@@ -18,7 +18,8 @@ typedef enum {
   TK_RESERVED, // Symbol
   TK_SIZEOF,   // `sizeof` operator
   TK_IDENT,    // Identifier
-  TK_NUM,      // Integer token
+  TK_STR,      // String literals
+  TK_NUM,      // Integer literals
   TK_EOF,      // Token representing the end of input
 } TokenKind;
 
@@ -30,6 +31,10 @@ struct Token {
   int val;        // Value of a token if its kind is TK_NUM
   char *str;      // String of a token
   int len;        // Length of a token
+
+  // Strings
+  char *contents; // String literal contents including terminating '\0'
+  int cont_len;   // String literal length
 };
 
 // Type of variables
@@ -41,6 +46,10 @@ struct Var {
 
   // Local variable
   int offset; // Offset from RBP (base pointer)
+
+  // Global variable
+  char *contents; // String literal contents including terminating '\0'
+  int cont_len;   // String literal length
 };
 
 // List of variables

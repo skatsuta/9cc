@@ -506,7 +506,16 @@ Node *postfix() {
   return node;
 }
 
-// primary = "(" expr ")" | ident func-args? | num
+char *new_label() {
+  // Since it's a static variable, it's incremented with every function call
+  static int cnt = 0;
+  char buf[20];
+  sprintf(buf, ".L.data.%d", cnt);
+  cnt++;
+  return strndup(buf, 20);
+}
+
+// primary = "(" expr ")" | ident func-args? | str | num
 Node *primary() {
   // Assume "(" expr ")" if next token is "("
   if (consume("(")) {
@@ -536,9 +545,20 @@ Node *primary() {
   }
 
   tok = token;
+  if (tok->kind == TK_STR) {
+    token = token->next;
+
+    Type *type = array_of(char_type, tok->cont_len);
+    Var *var = new_global_var(new_label(), type);
+    var->contents = tok->contents;
+    var->cont_len = tok->cont_len;
+    return new_var_node(var, tok);
+  }
+
   if (tok->kind != TK_NUM) {
     error_tok(tok, "expected expression");
   }
+
   return new_num(expect_number(), tok);
 }
 
