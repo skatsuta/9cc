@@ -9,6 +9,7 @@
 #include <string.h>
 
 typedef struct Type Type;
+typedef struct Member Member;
 
 //
 // token.c
@@ -92,6 +93,7 @@ typedef enum {
   ND_LT,        // <
   ND_LE,        // <=
   ND_ASSIGN,    // =
+  ND_MEMBER,    // . (struct member access)
   ND_ADDR,      // & (address-of operator)
   ND_DEREF,     // * (dereference operator)
   ND_RETURN,    // "return"
@@ -127,6 +129,9 @@ struct Node {
 
   // Block, function body, or statement expression
   Node *body;
+
+  // Struct member
+  Member *member;
 
   // Function call or definition
   char *func_name; // Function name
@@ -166,13 +171,28 @@ void codegen(Program *prog);
 // type.c
 //
 
-typedef enum { TYPE_CHAR, TYPE_INT, TYPE_PTR, TYPE_ARRAY } TypeKind;
+typedef enum {
+  TYPE_CHAR,
+  TYPE_INT,
+  TYPE_PTR,
+  TYPE_ARRAY,
+  TYPE_STRUCT,
+} TypeKind;
 
 struct Type {
-  TypeKind kind; // Kind of type
-  int size;      // sizeof() value
-  Type *base;    // Base type
-  int array_len; // Length of an array
+  TypeKind kind;   // Kind of type
+  int size;        // sizeof() value
+  Type *base;      // Base type
+  int array_len;   // Length of an array
+  Member *members; // Struct members
+};
+
+// Struct member
+struct Member {
+  Member *next;
+  Type *type;
+  char *name;
+  int offset;
 };
 
 bool is_integer(Type *type);

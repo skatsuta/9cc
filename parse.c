@@ -99,9 +99,11 @@ Node *new_var_node(Var *var, Token *tok) {
 bool at_eof(void) { return token->kind == TK_EOF; }
 
 // Function declarations
-Function *function();
 Type *basetype();
+Type *struct_decl();
+Member *struct_member();
 void global_var();
+Function *function();
 Node *stmt();
 Node *stmt_inner();
 Node *declaration();
@@ -148,19 +150,61 @@ Program *program() {
   return prog;
 }
 
-// basetype = ("char" | "int") "*"*
+// Returns true if the next token represents a type.
+bool is_type_name(Token *tok) {
+  return peek("char") || peek("int") || peek("struct");
+}
+
+// basetype = ("char" | "int" | struct-decl) "*"*
 Type *basetype() {
+  if (!is_type_name(token)) {
+    error_tok(token, "unknown type name");
+  }
+
+  // Parse type name
   Type *type;
   if (consume("char")) {
     type = char_type;
-  } else {
-    expect("int");
+  } else if (consume("int")) {
     type = int_type;
+  } else {
+    type = struct_decl();
   }
 
+  // Parse pointer symbols
   while (consume("*")) {
     type = pointer_to(type);
   }
+
+  return type;
+}
+
+// struct-decl = "struct" "{" struct-member* "}"
+Type *struct_decl() {
+  // Read struct members
+  expect("struct");
+  expect("{");
+
+  Member head = {};
+  Member *cur = &head;
+
+  while (!consume("}")) {
+    cur->next = struct_member();
+    cur = cur->next;
+  }
+
+  Type *type = calloc(1, sizeof(Type));
+  type->kind = TYPE_STRUCT;
+  type->members = head.next;
+
+  // Assign offsets within the struct to members
+  int offset = 0;
+  for (Member *m = type->members; m; m = m->next) {
+    m->offset = offset;
+    offset += m->type->size;
+  }
+  type->size = offset;
+
   return type;
 }
 
@@ -174,6 +218,16 @@ Type *read_type_suffix(Type *base) {
   expect("]");
   base = read_type_suffix(base);
   return array_of(base, size);
+}
+
+// struct-member = basetype ident ("[" num "]")* ";"
+Member *struct_member() {
+  Member *m = calloc(1, sizeof(Member));
+  m->type = basetype();
+  m->name = expect_ident();
+  m->type = read_type_suffix(m->type);
+  expect(";");
+  return m;
 }
 
 // global-var = basetype ident ("[" num "]")* ";"
@@ -258,9 +312,6 @@ Node *stmt() {
   return node;
 }
 
-// Returns true if the next token represents a type.
-bool is_type_name() { return peek("char") || peek("int"); }
-
 // stmt = "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr ";" expr ";" expr ")" stmt
@@ -338,7 +389,7 @@ Node *stmt_inner() {
     return node;
   }
 
-  if (is_type_name()) {
+  if (is_type_name(token)) {
     return declaration();
   }
 
@@ -504,19 +555,53 @@ Node *unary() {
   }
 }
 
-// postfix = primary ("[" expr "]")*
+Member *find_member(Type *type, char *name) {
+  for (Member *m = type->members; m; m = m->next) {
+    if (!strcmp(m->name, name)) {
+      return m;
+    }
+  }
+  return NULL;
+}
+
+Node *struct_ref(Node *lhs) {
+  add_type(lhs);
+  if (lhs->type->kind != TYPE_STRUCT) {
+    error_tok(lhs->tok, "not a struct");
+  }
+
+  Token *tok = token;
+  Member *m = find_member(lhs->type, expect_ident());
+  if (!m) {
+    error_tok(tok, "no such member");
+  }
+
+  Node *node = new_unary(ND_MEMBER, lhs, tok);
+  node->member = m;
+  return node;
+}
+
+// postfix = primary ("[" expr "]" | "." ident)*
 Node *postfix() {
   Node *node = primary();
   Token *tok;
 
-  while ((tok = consume("["))) {
-    // x[y] is short for *(x+y)
-    Node *idx = new_add(node, expr(), tok);
-    expect("]");
-    node = new_unary(ND_DEREF, idx, tok);
-  }
+  for (;;) {
+    if ((tok = consume("["))) {
+      // x[y] is short for *(x+y)
+      Node *idx = new_add(node, expr(), tok);
+      expect("]");
+      node = new_unary(ND_DEREF, idx, tok);
+      continue;
+    }
 
-  return node;
+    if ((tok = consume("."))) {
+      node = struct_ref(node);
+      continue;
+    }
+
+    return node;
+  }
 }
 
 char *new_label() {

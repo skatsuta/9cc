@@ -37,34 +37,36 @@ OK
 Currently this compiler supports the following subset of C language syntax:
 
 ```
-program     = (global-var | function)*
-global-var  = basetype ident ("[" num "]")* ";"
-function    = basetype ident "(" params? ")" "{" stmt* "}"
-basetype    = ("char" | "int") "*"*
-params      = param ("," param)*
-param       = basetype ident
-stmt        = "if" "(" expr ")" stmt ("else" stmt)?
-            | "while" "(" expr ")" stmt
-            | "for" "(" expr ";" expr ";" expr ")" stmt
-            | "return" expr ";"
-            | "{" stmt* "}"
-            | declaration
-            | expr ";"
-declaration = basetype ident ("[" num "]")* ("=" assign)? ";"
-expr        = assign
-assign      = equality ("=" assign)?
-equality    = relational ("==" relational | "!=" relational)*
-relational  = add ("<" add | "<=" add | ">" add | ">=" add)*
-add         = mul ("+" mul | "-" mul)*
-mul         = unary ("*" unary | "/" unary)*
-unary       = ("+" | "-" | "&" | "*" | "sizeof")? unary
-            | postfix
-postfix     = primary ("[" expr "]")*
-primary     = stmt-expr
-            | "(" expr ")"
-            | ident func-args?
-            | str
-            | num
-stmt-expr   = "(" "{" stmt stmt* "}" ")"
-func-args   = "(" (assign ("," assign)*)? ")"
+program       = (global-var | function)*
+basetype      = ("char" | "int" | struct-decl) "*"*
+struct-decl   = "struct" "{" struct-member* "}"
+struct-member = basetype ident ("[" num "]")* ";"
+global-var    = basetype ident ("[" num "]")* ";"
+function      = basetype ident "(" params? ")" "{" stmt* "}"
+params        = param ("," param)*
+param         = basetype ident
+stmt          = "if" "(" expr ")" stmt ("else" stmt)?
+              | "while" "(" expr ")" stmt
+              | "for" "(" expr ";" expr ";" expr ")" stmt
+              | "return" expr ";"
+              | "{" stmt* "}"
+              | declaration
+              | expr ";"
+declaration   = basetype ident ("[" num "]")* ("=" assign)? ";"
+expr          = assign
+assign        = equality ("=" assign)?
+equality      = relational ("==" relational | "!=" relational)*
+relational    = add ("<" add | "<=" add | ">" add | ">=" add)*
+add           = mul ("+" mul | "-" mul)*
+mul           = unary ("*" unary | "/" unary)*
+unary         = ("+" | "-" | "&" | "*" | "sizeof")? unary
+              | postfix
+postfix       = primary ("[" expr "]" | "." ident)*
+primary       = stmt-expr
+              | "(" expr ")"
+              | ident func-args?
+              | str
+              | num
+stmt-expr     = "(" "{" stmt stmt* "}" ")"
+func-args     = "(" (assign ("," assign)*)? ")"
 ```
