@@ -79,6 +79,16 @@ void add_type(Node *node) {
     }
     node->type = node->lhs->type->base;
     return;
+  case ND_STMT_EXPR: {
+    // Get the last statement
+    Node *last = node->body;
+    while (last->next) {
+      last = last->next;
+    }
+
+    node->type = last->type;
+    return;
+  }
   default:
     // This section is meaningless but added to suppress -Wswitch compiler
     // warning

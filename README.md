@@ -60,6 +60,11 @@ mul         = unary ("*" unary | "/" unary)*
 unary       = ("+" | "-" | "&" | "*" | "sizeof")? unary
             | postfix
 postfix     = primary ("[" expr "]")*
-primary     = "(" expr ")" | ident func-args? | str | num
+primary     = stmt-expr
+            | "(" expr ")"
+            | ident func-args?
+            | str
+            | num
+stmt-expr   = "(" "{" stmt stmt* "}" ")"
 func-args   = "(" (assign ("," assign)*)? ")"
 ```

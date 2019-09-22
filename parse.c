@@ -114,6 +114,7 @@ Node *mul();
 Node *unary();
 Node *postfix();
 Node *primary();
+Node *stmt_expr();
 Node *func_args();
 
 // Determines whether the next top-level item is a function or a global variable
@@ -527,16 +528,24 @@ char *new_label() {
   return strndup(buf, 20);
 }
 
-// primary = "(" expr ")" | ident func-args? | str | num
+// primary = stmt-expr
+//         | "(" expr ")"
+//         | ident func-args?
+//         | str
+//         | num
 Node *primary() {
+  Token *tok;
+
   // Assume "(" expr ")" if next token is "("
-  if (consume("(")) {
+  if ((tok = consume("("))) {
+    if (consume("{")) {
+      return stmt_expr(tok);
+    }
+
     Node *node = expr();
     expect(")");
     return node;
   }
-
-  Token *tok;
 
   // Consume if the token is an identifier
   if ((tok = consume_ident())) {
@@ -572,6 +581,27 @@ Node *primary() {
   }
 
   return new_num(expect_number(), tok);
+}
+
+// stmt-expr = "(" "{" stmt stmt* "}" ")"
+//
+// Statement expression is a GNU C extension.
+Node *stmt_expr(Token *tok) {
+  Node *node = new_node(ND_STMT_EXPR, tok);
+  node->body = stmt();
+  Node *cur = node->body;
+
+  while (!consume("}")) {
+    cur->next = stmt();
+    cur = cur->next;
+  }
+  expect(")");
+
+  if (cur->kind != ND_EXPR_STMT) {
+    error_tok(cur->tok, "statement expression returning void is not supported");
+  }
+  memcpy(cur, cur->lhs, sizeof(Node));
+  return node;
 }
 
 // func-args = "(" (assign ("," assign)*)? ")"

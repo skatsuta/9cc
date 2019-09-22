@@ -99,6 +99,7 @@ typedef enum {
   ND_WHILE,     // "while"
   ND_FOR,       // "for"
   ND_EXPR_STMT, // Expression statement
+  ND_STMT_EXPR, // GNU statement expression
   ND_BLOCK,     // Block (compound) statement { ... }
   ND_CALL,      // Function call
   ND_VAR,       // Variable
@@ -124,7 +125,7 @@ struct Node {
   Node *init; // Initialization in "for"
   Node *updt; // Update in "for"
 
-  // Block or function body
+  // Block, function body, or statement expression
   Node *body;
 
   // Function call or definition
