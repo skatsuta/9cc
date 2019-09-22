@@ -1,24 +1,34 @@
 #include "9cc.h"
 
-Type *char_type = &(Type){.kind = TYPE_CHAR, .size = 1};
-Type *int_type = &(Type){.kind = TYPE_INT, .size = 8};
+Type *char_type = &(Type){.kind = TYPE_CHAR, .size = 1, .align = 1};
+Type *int_type = &(Type){.kind = TYPE_INT, .size = 8, .align = 8};
 
 bool is_integer(Type *type) {
   return type->kind == TYPE_CHAR || type->kind == TYPE_INT;
 }
 
-Type *pointer_to(Type *base) {
+// Aligns `n` to the multiple of `align`.
+//
+// How to compute padding is explained at
+// https://en.wikipedia.org/wiki/Data_structure_alignment#Computing_padding.
+int align_to(int n, int align) { return (n + align - 1) & ~(align - 1); }
+
+Type *new_type(TypeKind kind, int size, int align) {
   Type *type = calloc(1, sizeof(Type));
-  type->kind = TYPE_PTR;
-  type->size = 8;
+  type->kind = kind;
+  type->size = size;
+  type->align = align;
+  return type;
+}
+
+Type *pointer_to(Type *base) {
+  Type *type = new_type(TYPE_PTR, 8, 8);
   type->base = base;
   return type;
 }
 
 Type *array_of(Type *base, int len) {
-  Type *type = calloc(1, sizeof(Type));
-  type->kind = TYPE_ARRAY;
-  type->size = base->size * len;
+  Type *type = new_type(TYPE_ARRAY, base->size * len, base->align);
   type->base = base;
   type->array_len = len;
   return type;

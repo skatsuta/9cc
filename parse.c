@@ -200,10 +200,15 @@ Type *struct_decl() {
   // Assign offsets within the struct to members
   int offset = 0;
   for (Member *m = type->members; m; m = m->next) {
+    offset = align_to(offset, m->type->align);
     m->offset = offset;
     offset += m->type->size;
+
+    if (type->align < m->type->align) {
+      type->align = m->type->align;
+    }
   }
-  type->size = offset;
+  type->size = align_to(offset, type->align);
 
   return type;
 }
