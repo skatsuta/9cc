@@ -1,9 +1,10 @@
-CFLAGS = -std=c11 -g -static
+CFLAGS = -std=c11 -g -static -fno-common
 OS = $(shell uname -s | tr A-Z a-z)
 HDRS = $(wildcard *.h)
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)
 BIN = 9cc
+TMP = tmp
 
 $(BIN): $(OBJS)
 	$(CC) -o $@ $(OBJS) $(LDFLAGS)
@@ -26,7 +27,9 @@ test-darwin:
 # Test command for Linux
 .PHONY: test-linux
 test-linux: $(BIN)
-	./test.sh
+	./$(BIN) tests > $(TMP).s
+	$(CC) -o $(TMP) $(TMP).s
+	./$(TMP)
 
 .PHONY: clean
 clean:
