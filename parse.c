@@ -4,19 +4,12 @@
 // accumulated to this list.
 VarList *locals;
 VarList *globals;
+VarList *scope;
 
-// Finds a local variable by name. If the name is not found in local variables,
+// Finds a variable by name. If a variable with the name is not found,
 // it returns NULL.
 Var *find_var(Token *tok) {
-  for (VarList *vl = locals; vl; vl = vl->next) {
-    Var *var = vl->var;
-    if (strlen(var->name) == tok->len &&
-        !strncmp(tok->str, var->name, tok->len)) {
-      return var;
-    }
-  }
-
-  for (VarList *vl = globals; vl; vl = vl->next) {
+  for (VarList *vl = scope; vl; vl = vl->next) {
     Var *var = vl->var;
     if (strlen(var->name) == tok->len &&
         !strncmp(tok->str, var->name, tok->len)) {
@@ -67,6 +60,12 @@ Var *new_var(char *name, Type *type, bool is_local) {
   var->name = name;
   var->type = type;
   var->is_local = is_local;
+
+  // Add to a list of variables in the current scope
+  VarList *sc = new_var_list(var);
+  sc->next = scope;
+  scope = sc;
+
   return var;
 }
 
@@ -214,24 +213,35 @@ VarList *read_func_params() {
 // params   = param ("," param)*
 // param    = basetype ident
 Function *function() {
+  // Initialie a list of local variables
   locals = NULL;
 
-  Function *fn = calloc(1, sizeof(Function));
+  // Start parsing a function
   basetype();
-  fn->name = expect_ident();
-  expect("(");
-  fn->params = read_func_params();
-  expect("{");
+  char *name = expect_ident();
 
+  // Parse function arguments
+  expect("(");
+  VarList *sc = scope;
+  VarList *params = read_func_params();
+
+  // Parse function body
+  expect("{");
   Node head = {};
   Node *cur = &head;
   while (!consume("}")) {
     cur->next = stmt();
     cur = cur->next;
   }
+  scope = sc;
 
+  // Create a Function node
+  Function *fn = calloc(1, sizeof(Function));
+  fn->name = name;
+  fn->params = params;
   fn->node = head.next;
   fn->locals = locals;
+
   return fn;
 }
 
@@ -315,10 +325,12 @@ Node *stmt_inner() {
     Node head = {};
     Node *cur = &head;
 
+    VarList *sc = scope;
     while (!consume("}")) {
       cur->next = stmt();
       cur = cur->next;
     }
+    scope = sc;
 
     Node *node = new_node(ND_BLOCK, tok);
     node->body = head.next;
