@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
     int offset = 0;
     for (VarList *vl = fn->locals; vl; vl = vl->next) {
       Var *var = vl->var;
-      offset += var->type->size;
+      offset = align_to(offset, var->type->align) + var->type->size;
       var->offset = offset;
     }
     fn->stack_size = align_to(offset, 8);
