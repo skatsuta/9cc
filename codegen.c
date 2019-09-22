@@ -94,6 +94,7 @@ void gen(Node *node) {
     return;
   case ND_IF: {
     int seq = label_seq;
+    label_seq++;
     gen(node->cond);
     printf("  pop rax\n");
     printf("  cmp rax, 0\n");
@@ -108,11 +109,11 @@ void gen(Node *node) {
       gen(node->cons);
     }
     printf(".L.end.%d:\n", seq);
-    label_seq++;
     return;
   }
   case ND_WHILE: {
     int seq = label_seq;
+    label_seq++;
     printf(".L.begin.%d:\n", seq);
     gen(node->cond);
     printf("  pop rax\n");
@@ -121,11 +122,11 @@ void gen(Node *node) {
     gen(node->cons);
     printf("  jmp .L.begin.%d\n", seq);
     printf(".L.end.%d:\n", seq);
-    label_seq++;
     return;
   }
   case ND_FOR: {
     int seq = label_seq;
+    label_seq++;
     if (node->init) {
       gen(node->init);
     }
@@ -142,7 +143,6 @@ void gen(Node *node) {
     }
     printf("  jmp .L.begin.%d\n", seq);
     printf(".L.end.%d:\n", seq);
-    label_seq++;
     return;
   }
   case ND_BLOCK:
@@ -168,6 +168,7 @@ void gen(Node *node) {
     // calling a function.
     // RAX is set to zero for a variadic function.
     int seq = label_seq;
+    label_seq++;
     printf("  mov rax, rsp\n");
     printf("  and rax, 15\n");
     printf("  jnz .L.call.%d\n", seq);
@@ -181,7 +182,6 @@ void gen(Node *node) {
     printf("  add rsp, 8\n");
     printf(".L.end.%d:\n", seq);
     printf("  push rax\n");
-    label_seq++;
 
     return;
   }
