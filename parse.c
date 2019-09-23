@@ -1,5 +1,14 @@
 #include "9cc.h"
 
+// Scope for local variables, global variables and typedefs
+typedef struct VarScope VarScope;
+struct VarScope {
+  VarScope *next;
+  char *name;
+  Var *var;
+  Type *type_def;
+};
+
 // Scope for struct tags
 typedef struct TagScope TagScope;
 struct TagScope {
@@ -9,7 +18,7 @@ struct TagScope {
 };
 
 typedef struct {
-  VarList *var_scope;
+  VarScope *var_scope;
   TagScope *tag_scope;
 } Scope;
 
@@ -18,9 +27,9 @@ typedef struct {
 VarList *locals;
 VarList *globals;
 
-// C has two block scopes; one is for variables and the other is for struct
-// tags.
-VarList *var_scope;
+// C has two block scopes; one is for variables/typedefs and the other is for
+// struct tags.
+VarScope *var_scope;
 TagScope *tag_scope;
 
 // Begins a block scope.
@@ -37,14 +46,13 @@ void leave_scope(Scope *sc) {
   tag_scope = sc->tag_scope;
 }
 
-// Finds a variable by name. If a variable with the name is not found,
-// it returns NULL.
-Var *find_var(Token *tok) {
-  for (VarList *vl = var_scope; vl; vl = vl->next) {
-    Var *var = vl->var;
-    if (strlen(var->name) == tok->len &&
-        !strncmp(tok->str, var->name, tok->len)) {
-      return var;
+// Finds a variable or a typedef by name. If a variable with the name is not
+// found, it returns NULL.
+VarScope *find_var(Token *tok) {
+  for (VarScope *sc = var_scope; sc; sc = sc->next) {
+    if (strlen(sc->name) == tok->len &&
+        !strncmp(tok->str, sc->name, tok->len)) {
+      return sc;
     }
   }
 
@@ -89,6 +97,14 @@ Node *new_num(int val, Token *tok) {
   return node;
 }
 
+VarScope *push_scope(char *name) {
+  VarScope *sc = calloc(1, sizeof(VarScope));
+  sc->name = name;
+  sc->next = var_scope;
+  var_scope = sc;
+  return sc;
+}
+
 // Creates a list of variables.
 VarList *new_var_list(Var *var) {
   VarList *vl = calloc(1, sizeof(VarList));
@@ -103,32 +119,30 @@ Var *new_var(char *name, Type *type, bool is_local) {
   var->name = name;
   var->type = type;
   var->is_local = is_local;
-
-  // Add to a list of variables in the current scope
-  VarList *sc = new_var_list(var);
-  sc->next = var_scope;
-  var_scope = sc;
-
   return var;
 }
 
 // Creates a new local variable with the given name.
 Var *new_local_var(char *name, Type *type) {
   Var *var = new_var(name, type, true);
+  push_scope(name)->var = var;
 
   VarList *vl = new_var_list(var);
   vl->next = locals;
   locals = vl;
+
   return var;
 }
 
 // Creates a new global variable with the given name.
 Var *new_global_var(char *name, Type *type) {
   Var *var = new_var(name, type, false);
+  push_scope(name)->var = var;
 
   VarList *vl = new_var_list(var);
   vl->next = globals;
   globals = vl;
+
   return var;
 }
 
@@ -137,6 +151,18 @@ Node *new_var_node(Var *var, Token *tok) {
   Node *node = new_node(ND_VAR, tok);
   node->var = var;
   return node;
+}
+
+// Finds a typedef by a token. If a typedef specified by the token is not found,
+// it returns NULL.
+Type *find_typedef(Token *tok) {
+  if (tok->kind == TK_IDENT) {
+    VarScope *sc = find_var(tok);
+    if (sc) {
+      return sc->type_def;
+    }
+  }
+  return NULL;
 }
 
 bool at_eof(void) { return token->kind == TK_EOF; }
@@ -195,10 +221,10 @@ Program *program() {
 
 // Returns true if the next token represents a type.
 bool is_type_name(Token *tok) {
-  return peek("char") || peek("int") || peek("struct");
+  return peek("char") || peek("int") || peek("struct") || find_typedef(token);
 }
 
-// basetype = ("char" | "int" | struct-decl) "*"*
+// basetype = ("char" | "int" | struct-decl | typedef-name) "*"*
 Type *basetype() {
   if (!is_type_name(token)) {
     error_tok(token, "unknown type name");
@@ -210,8 +236,10 @@ Type *basetype() {
     type = char_type;
   } else if (consume("int")) {
     type = int_type;
-  } else {
+  } else if (consume("struct")) {
     type = struct_decl();
+  } else {
+    type = find_var(consume_ident())->type_def;
   }
 
   // Parse pointer symbols
@@ -233,8 +261,6 @@ void push_tag_scope(Token *tok, Type *type) {
 // struct-decl = "struct" ident
 //             | "struct" ident? "{" struct-member* "}"
 Type *struct_decl() {
-  expect("struct");
-
   // Read a struct tag
   Token *tag = consume_ident();
   if (tag && !peek("{")) {
@@ -389,6 +415,7 @@ Node *stmt() {
 //      | "for" "(" expr ";" expr ";" expr ")" stmt
 //      | "return" expr ";"
 //      | "{" stmt* "}"
+//      | "typedef" basetype ident ("[" num "]")* ";"
 //      | declaration
 //      | expr ";"
 Node *stmt_inner() {
@@ -459,6 +486,15 @@ Node *stmt_inner() {
     Node *node = new_node(ND_BLOCK, tok);
     node->body = head.next;
     return node;
+  }
+
+  if ((tok = consume("typedef"))) {
+    Type *type = basetype();
+    char *name = expect_ident();
+    type = read_type_suffix(type);
+    expect(";");
+    push_scope(name)->type_def = type;
+    return new_node(ND_NULL, tok);
   }
 
   if (is_type_name(token)) {
@@ -726,11 +762,11 @@ Node *primary() {
     }
 
     // Parse a variable
-    Var *var = find_var(tok);
-    if (!var) {
+    VarScope *sc = find_var(tok);
+    if (!sc || !sc->var) {
       error_tok(tok, "undefined variable");
     }
-    return new_var_node(var, tok);
+    return new_var_node(sc->var, tok);
   }
 
   tok = token;
