@@ -658,7 +658,7 @@ Node *struct_ref(Node *lhs) {
   return node;
 }
 
-// postfix = primary ("[" expr "]" | "." ident)*
+// postfix = primary ("[" expr "]" | "." ident | "->" ident)*
 Node *postfix() {
   Node *node = primary();
   Token *tok;
@@ -674,6 +674,12 @@ Node *postfix() {
 
     if ((tok = consume("."))) {
       node = struct_ref(node);
+      continue;
+    }
+
+    if ((tok = consume("->"))) {
+      // x->y is short for (*x).y
+      node = struct_ref(new_unary(ND_DEREF, node, tok));
       continue;
     }
 

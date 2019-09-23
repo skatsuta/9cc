@@ -63,7 +63,7 @@ add           = mul ("+" mul | "-" mul)*
 mul           = unary ("*" unary | "/" unary)*
 unary         = ("+" | "-" | "&" | "*" | "sizeof")? unary
               | postfix
-postfix       = primary ("[" expr "]" | "." ident)*
+postfix       = primary ("[" expr "]" | "." ident | "->" ident)*
 primary       = stmt-expr
               | "(" expr ")"
               | ident func-args?

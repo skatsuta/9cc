@@ -168,7 +168,7 @@ char *read_reserved(char *p) {
   }
 
   // Multi-letter punctuators
-  char *ops[] = {"==", "!=", "<=", ">="};
+  char *ops[] = {"==", "!=", "<=", ">=", "->"};
 
   for (int i = 0; i < sizeof(ops) / sizeof(*ops); i++) {
     if (start_with(p, ops[i])) {
