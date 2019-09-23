@@ -1,7 +1,7 @@
 #include "9cc.h"
 
 Type *char_type = &(Type){.kind = TYPE_CHAR, .size = 1, .align = 1};
-Type *int_type = &(Type){.kind = TYPE_INT, .size = 8, .align = 8};
+Type *int_type = &(Type){.kind = TYPE_INT, .size = 4, .align = 4};
 
 bool is_integer(Type *type) {
   return type->kind == TYPE_CHAR || type->kind == TYPE_INT;
