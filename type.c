@@ -1,10 +1,13 @@
 #include "9cc.h"
 
 Type *char_type = &(Type){.kind = TYPE_CHAR, .size = 1, .align = 1};
+Type *short_type = &(Type){.kind = TYPE_SHORT, .size = 2, .align = 2};
 Type *int_type = &(Type){.kind = TYPE_INT, .size = 4, .align = 4};
+Type *long_type = &(Type){.kind = TYPE_LONG, .size = 8, .align = 8};
 
 bool is_integer(Type *type) {
-  return type->kind == TYPE_CHAR || type->kind == TYPE_INT;
+  TypeKind k = type->kind;
+  return k == TYPE_CHAR || k == TYPE_SHORT || k == TYPE_INT || k == TYPE_LONG;
 }
 
 // Aligns `n` to the multiple of `align`.
@@ -66,7 +69,7 @@ void add_type(Node *node) {
   case ND_LE:
   case ND_CALL:
   case ND_NUM:
-    node->type = int_type;
+    node->type = long_type;
     return;
   case ND_PTR_ADD:
   case ND_PTR_SUB:

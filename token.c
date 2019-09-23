@@ -157,8 +157,8 @@ bool is_alphanum(char c) { return is_alpha(c) || ('0' <= c && c <= '9'); }
 // it returns NULL.
 char *read_reserved(char *p) {
   // Keywords
-  char *kw[] = {"return", "if",   "else",   "while",  "for",
-                "int",    "char", "struct", "sizeof", "typedef"};
+  char *kw[] = {"return", "if",  "else", "while",  "for",    "char",
+                "short",  "int", "long", "struct", "sizeof", "typedef"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
     int len = strlen(kw[i]);

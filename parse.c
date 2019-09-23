@@ -221,10 +221,12 @@ Program *program() {
 
 // Returns true if the next token represents a type.
 bool is_type_name(Token *tok) {
-  return peek("char") || peek("int") || peek("struct") || find_typedef(token);
+  return peek("char") || peek("short") || peek("int") || peek("long") ||
+         peek("struct") || find_typedef(token);
 }
 
-// basetype = ("char" | "int" | struct-decl | typedef-name) "*"*
+// basetype = type "*"*
+// type     = "char" | "short" | "int" | "long" | struct-decl | typedef-name
 Type *basetype() {
   if (!is_type_name(token)) {
     error_tok(token, "unknown type name");
@@ -234,8 +236,12 @@ Type *basetype() {
   Type *type;
   if (consume("char")) {
     type = char_type;
+  } else if (consume("short")) {
+    type = short_type;
   } else if (consume("int")) {
     type = int_type;
+  } else if (consume("long")) {
+    type = long_type;
   } else if (consume("struct")) {
     type = struct_decl();
   } else {

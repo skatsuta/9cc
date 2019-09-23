@@ -38,7 +38,8 @@ Currently this compiler supports the following subset of C language syntax:
 
 ```
 program       = (global-var | function)*
-basetype      = ("char" | "int" | struct-decl | typedef-name) "*"*
+basetype      = type "*"*
+type          = "char" | "short" | "int" | "long" | struct-decl | typedef-name
 struct-decl   = "struct" ident
               | "struct" ident? "{" struct-member* "}"
 struct-member = basetype ident ("[" num "]")* ";"

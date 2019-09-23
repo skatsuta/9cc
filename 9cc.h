@@ -173,7 +173,9 @@ void codegen(Program *prog);
 
 typedef enum {
   TYPE_CHAR,
+  TYPE_SHORT,
   TYPE_INT,
+  TYPE_LONG,
   TYPE_PTR,
   TYPE_ARRAY,
   TYPE_STRUCT,
@@ -203,4 +205,6 @@ Type *array_of(Type *base, int size);
 void add_type(Node *node);
 
 extern Type *char_type;
+extern Type *short_type;
 extern Type *int_type;
+extern Type *long_type;

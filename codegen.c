@@ -1,6 +1,7 @@
 #include "9cc.h"
 
 char *arg_regs_1[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+char *arg_regs_2[] = {"di", "si", "dx", "cx", "r8w", "r9w"};
 char *arg_regs_4[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 char *arg_regs_8[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
@@ -14,6 +15,8 @@ void store(Type *type) {
 
   if (type->size == 1) {
     printf("  mov [rax], dil\n");
+  } else if (type->size == 2) {
+    printf("  mov [rax], di\n");
   } else if (type->size == 4) {
     printf("  mov [rax], edi\n");
   } else {
@@ -27,6 +30,8 @@ void load(Type *type) {
   printf("  pop rax\n");
   if (type->size == 1) {
     printf("  movsx rax, byte ptr [rax]\n");
+  } else if (type->size == 2) {
+    printf("  movsx rax, word ptr [rax]\n");
   } else if (type->size == 4) {
     printf("  movsxd rax, dword ptr [rax]\n");
   } else {
@@ -276,6 +281,8 @@ void load_arg(Var *var, int idx) {
   char *reg;
   if (size == 1) {
     reg = arg_regs_1[idx];
+  } else if (size == 2) {
+    reg = arg_regs_2[idx];
   } else if (size == 4) {
     reg = arg_regs_4[idx];
   } else {
