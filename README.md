@@ -39,7 +39,8 @@ Currently this compiler supports the following subset of C language syntax:
 ```
 program       = (global-var | function)*
 basetype      = ("char" | "int" | struct-decl) "*"*
-struct-decl   = "struct" "{" struct-member* "}"
+struct-decl   = "struct" ident
+              | "struct" ident? "{" struct-member* "}"
 struct-member = basetype ident ("[" num "]")* ";"
 global-var    = basetype ident ("[" num "]")* ";"
 function      = basetype ident "(" params? ")" "{" stmt* "}"
@@ -53,6 +54,7 @@ stmt          = "if" "(" expr ")" stmt ("else" stmt)?
               | declaration
               | expr ";"
 declaration   = basetype ident ("[" num "]")* ("=" assign)? ";"
+              | basetype ";"
 expr          = assign
 assign        = equality ("=" assign)?
 equality      = relational ("==" relational | "!=" relational)*

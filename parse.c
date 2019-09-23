@@ -1,15 +1,46 @@
 #include "9cc.h"
 
+// Scope for struct tags
+typedef struct TagScope TagScope;
+struct TagScope {
+  TagScope *next;
+  char *name;
+  Type *type;
+};
+
+typedef struct {
+  VarList *var_scope;
+  TagScope *tag_scope;
+} Scope;
+
 // All local and global variable instances created during parsing are
-// accumulated to this list.
+// accumulated to these lists respectively.
 VarList *locals;
 VarList *globals;
-VarList *scope;
+
+// C has two block scopes; one is for variables and the other is for struct
+// tags.
+VarList *var_scope;
+TagScope *tag_scope;
+
+// Begins a block scope.
+Scope *enter_scope() {
+  Scope *sc = calloc(1, sizeof(Scope));
+  sc->var_scope = var_scope;
+  sc->tag_scope = tag_scope;
+  return sc;
+}
+
+// Ends the block scope.
+void leave_scope(Scope *sc) {
+  var_scope = sc->var_scope;
+  tag_scope = sc->tag_scope;
+}
 
 // Finds a variable by name. If a variable with the name is not found,
 // it returns NULL.
 Var *find_var(Token *tok) {
-  for (VarList *vl = scope; vl; vl = vl->next) {
+  for (VarList *vl = var_scope; vl; vl = vl->next) {
     Var *var = vl->var;
     if (strlen(var->name) == tok->len &&
         !strncmp(tok->str, var->name, tok->len)) {
@@ -17,6 +48,18 @@ Var *find_var(Token *tok) {
     }
   }
 
+  return NULL;
+}
+
+// Finds a struct tag by name. If a struct tag with the name is not found,
+// it returns NULL.
+TagScope *find_tag(Token *tok) {
+  for (TagScope *sc = tag_scope; sc; sc = sc->next) {
+    if (strlen(sc->name) == tok->len &&
+        !strncmp(tok->str, sc->name, tok->len)) {
+      return sc;
+    }
+  }
   return NULL;
 }
 
@@ -63,8 +106,8 @@ Var *new_var(char *name, Type *type, bool is_local) {
 
   // Add to a list of variables in the current scope
   VarList *sc = new_var_list(var);
-  sc->next = scope;
-  scope = sc;
+  sc->next = var_scope;
+  var_scope = sc;
 
   return var;
 }
@@ -179,15 +222,34 @@ Type *basetype() {
   return type;
 }
 
-// struct-decl = "struct" "{" struct-member* "}"
+void push_tag_scope(Token *tok, Type *type) {
+  TagScope *sc = calloc(1, sizeof(TagScope));
+  sc->next = tag_scope;
+  sc->name = strndup(tok->str, tok->len);
+  sc->type = type;
+  tag_scope = sc;
+}
+
+// struct-decl = "struct" ident
+//             | "struct" ident? "{" struct-member* "}"
 Type *struct_decl() {
-  // Read struct members
   expect("struct");
+
+  // Read a struct tag
+  Token *tag = consume_ident();
+  if (tag && !peek("{")) {
+    TagScope *sc = find_tag(tag);
+    if (!sc) {
+      error_tok(tag, "unknown struct type");
+    }
+    return sc->type;
+  }
+
   expect("{");
 
+  // Read struct members
   Member head = {};
   Member *cur = &head;
-
   while (!consume("}")) {
     cur->next = struct_member();
     cur = cur->next;
@@ -209,6 +271,11 @@ Type *struct_decl() {
     }
   }
   type->size = align_to(offset, type->align);
+
+  // Register the struct type if a name is given
+  if (tag) {
+    push_tag_scope(tag, type);
+  }
 
   return type;
 }
@@ -282,7 +349,7 @@ Function *function() {
 
   // Parse function arguments
   expect("(");
-  VarList *sc = scope;
+  Scope *sc = enter_scope();
   VarList *params = read_func_params();
 
   // Parse function body
@@ -293,7 +360,7 @@ Function *function() {
     cur->next = stmt();
     cur = cur->next;
   }
-  scope = sc;
+  leave_scope(sc);
 
   // Create a Function node
   Function *fn = calloc(1, sizeof(Function));
@@ -382,12 +449,12 @@ Node *stmt_inner() {
     Node head = {};
     Node *cur = &head;
 
-    VarList *sc = scope;
+    Scope *sc = enter_scope();
     while (!consume("}")) {
       cur->next = stmt();
       cur = cur->next;
     }
-    scope = sc;
+    leave_scope(sc);
 
     Node *node = new_node(ND_BLOCK, tok);
     node->body = head.next;
@@ -405,9 +472,14 @@ Node *stmt_inner() {
 }
 
 // declaration = basetype ident ("[" num "]")* ("=" expr)? ";"
+//             | basetype ";"
 Node *declaration() {
   Token *tok = token;
   Type *type = basetype();
+  if (consume(";")) {
+    return new_node(ND_NULL, tok);
+  }
+
   char *name = expect_ident();
   type = read_type_suffix(type);
   Var *var = new_local_var(name, type);
@@ -677,6 +749,8 @@ Node *primary() {
 //
 // Statement expression is a GNU C extension.
 Node *stmt_expr(Token *tok) {
+  Scope *sc = enter_scope();
+
   Node *node = new_node(ND_STMT_EXPR, tok);
   node->body = stmt();
   Node *cur = node->body;
@@ -686,6 +760,8 @@ Node *stmt_expr(Token *tok) {
     cur = cur->next;
   }
   expect(")");
+
+  leave_scope(sc);
 
   if (cur->kind != ND_EXPR_STMT) {
     error_tok(cur->tok, "statement expression returning void is not supported");
