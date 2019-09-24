@@ -205,12 +205,17 @@ Program *program() {
   globals = NULL;
 
   while (!at_eof()) {
-    if (is_function()) {
-      cur->next = function();
-      cur = cur->next;
-    } else {
+    if (!is_function()) {
       global_var();
+      continue;
     }
+
+    Function *fn = function();
+    if (!fn) {
+      continue;
+    }
+    cur->next = fn;
+    cur = cur->next;
   }
 
   Program *prog = calloc(1, sizeof(Program));
@@ -368,7 +373,7 @@ VarList *read_func_params() {
   return head;
 }
 
-// function = basetype ident "(" params? ")" "{" stmt* "}"
+// function = basetype ident "(" params? ")" ("{" stmt* "}" | ";")
 // params   = param ("," param)*
 // param    = basetype ident
 Function *function() {
@@ -383,6 +388,12 @@ Function *function() {
   expect("(");
   Scope *sc = enter_scope();
   VarList *params = read_func_params();
+
+  // Parse prototype declaration
+  if (consume(";")) {
+    leave_scope(sc);
+    return NULL;
+  }
 
   // Parse function body
   expect("{");
