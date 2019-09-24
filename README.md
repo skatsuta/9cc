@@ -38,15 +38,17 @@ Currently this compiler supports the following subset of C language syntax:
 
 ```
 program       = (global-var | function)*
-basetype      = type "*"*
-type          = "char" | "short" | "int" | "long" | struct-decl | typedef-name
+basetype      = builtin-type | struct-decl | typedef-name
+declarator    = "*"* ("(" declarator ")" | ident) type-suffix
+type-suffix   = ("[" num "]" type-suffix)?
+builtin-type  = "char" | "short" | "int" | "long"
 struct-decl   = "struct" ident
               | "struct" ident? "{" struct-member* "}"
-struct-member = basetype ident ("[" num "]")* ";"
-global-var    = basetype ident ("[" num "]")* ";"
-function      = basetype ident "(" params? ")" "{" stmt* "}"
+struct-member = basetype declarator type-suffix ";"
+global-var    = basetype declarator ("[" num "]")* ";"
+function      = basetype declarator "(" params? ")" "{" stmt* "}"
 params        = param ("," param)*
-param         = basetype ident
+param         = basetype declarator type-suffix
 stmt          = "if" "(" expr ")" stmt ("else" stmt)?
               | "while" "(" expr ")" stmt
               | "for" "(" expr ";" expr ";" expr ")" stmt
@@ -55,7 +57,7 @@ stmt          = "if" "(" expr ")" stmt ("else" stmt)?
               | "typedef" basetype ident ("[" num "]")* ";"
               | declaration
               | expr ";"
-declaration   = basetype ident ("[" num "]")* ("=" assign)? ";"
+declaration   = basetype declarator type-suffix ("=" expr)? ";"
               | basetype ";"
 expr          = assign
 assign        = equality ("=" assign)?
